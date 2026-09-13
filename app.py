@@ -508,7 +508,7 @@ HTML = """
                     class="button primary"
                     href="/launch"
                 >
-                    Launch Client&nbsp; →
+                    Get GENGA-client&nbsp; →
                 </a>
                 <a
                     class="button secondary"
