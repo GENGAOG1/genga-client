@@ -804,8 +804,7 @@ HTML = """
                     </h3>
 
                     <p>
-                        Schneller und direkter Zugang
-                        zu deinem Genga Client.
+                        GENGA-Client Is a fast and easy to use minecraft cheat Client.
                     </p>
 
                 </div>
@@ -816,7 +815,7 @@ HTML = """
                 <div class="card">
 
                     <div class="icon">
-                        ◈
+                        📢
                     </div>
 
                     <h3>
@@ -824,8 +823,7 @@ HTML = """
                     </h3>
 
                     <p>
-                        Ein modernes Dark-Interface
-                        mit futuristischem Look.
+                        It has a clean, nice Interface
                     </p>
 
                 </div>
