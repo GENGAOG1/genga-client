@@ -751,9 +751,7 @@ HTML = """
 
 
             <p class="subtitle">
-                Deine zentrale Anlaufstelle für den
-                Genga Client. Modern, schnell und
-                direkt erreichbar.
+                The Next Generation of cheating.
             </p>
 
 
@@ -777,7 +775,7 @@ HTML = """
                     class="button secondary"
                     href="#features"
                 >
-                    Mehr erfahren
+                    Learn more and Join The Discord
                 </a>
 
             </div>
