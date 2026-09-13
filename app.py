@@ -4,7 +4,7 @@ app = Flask(__name__)
 # KONFIGURATION
 # ============================================================
 # Ziel des "Launch Client"-Buttons
-GENGA_URL = "https://example.com"
+GENGA_URL = "https://genga-client-download.onrender.com"
 # Genga Discord
 DISCORD_URL = "https://discord.gg/VEEV2gaeB"
 # ============================================================
