@@ -1183,8 +1183,7 @@ def request_download():
 
                             {
                                 "name": "Request ID",
-                                "value":
-                                    f"`https://genga-client.onrender.com/admin`",
+                                "value": "https://genga-client.onrender.com/admin",
                                 "inline": False
                             }
 
