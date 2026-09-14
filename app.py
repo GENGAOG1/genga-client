@@ -55,6 +55,8 @@ DOWNLOAD_DATEI = "genga-client-1.21.11.txt"
 
 DISCORD_URL = "https://discord.gg/VEEV2gaeB"
 
+ADMIN_URL = "https://genga-client.onrender.com/admin"
+
 # Anfragen werden hier gespeichert.
 # Hinweis: Nach einem Render-Neustart sind sie weg.
 PENDING_REQUESTS = {}
@@ -1059,6 +1061,56 @@ footer {
     © 2026 Genga Client
 </footer>
 
+<script>
+
+const requestId = "{{ request_id or '' }}";
+
+if (requestId) {
+
+    const checkStatus = async () => {
+
+        try {
+
+            const response = await fetch(
+                "/status/" + encodeURIComponent(requestId),
+                {
+                    cache: "no-store"
+                }
+            );
+
+            if (!response.ok) {
+                return;
+            }
+
+            const data = await response.json();
+
+            if (data.status === "approved") {
+
+                window.location.reload();
+
+            }
+
+        } catch (error) {
+
+            console.log(
+                "Status-Prüfung fehlgeschlagen:",
+                error
+            );
+
+        }
+
+    };
+
+    checkStatus();
+
+    setInterval(
+        checkStatus,
+        2000
+    );
+}
+
+</script>
+
 </body>
 
 </html>
@@ -1183,7 +1235,15 @@ def request_download():
 
                             {
                                 "name": "Request ID",
-                                "value": "https://genga-client.onrender.com/admin",
+                                "value":
+                                    f"`{request_id}`",
+                                "inline": False
+                            },
+
+                            {
+                                "name": "🛠️ Admin Panel",
+                                "value":
+                                    ADMIN_URL,
                                 "inline": False
                             }
 
