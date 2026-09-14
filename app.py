@@ -5,12 +5,14 @@ from flask import (
     request,
     redirect,
     url_for,
-    session
+    session,
+    jsonify
 )
 import os
 import uuid
 import requests
 import time
+from functools import wraps
 
 app = Flask(__name__)
 
@@ -18,16 +20,10 @@ app = Flask(__name__)
 # ENVIRONMENT VARIABLES
 # ============================================================
 
-# In Render setzen:
-# GENGA_SECRET_KEY = irgendein langer zufälliger Wert
-# GENGA_VALID_KEYS = KEY1,KEY2,KEY3
-# DISCORD_WEBHOOK_URL = dein Discord Webhook
-# ADMIN_PASSWORD = dein Admin Passwort
+# Diese Werte NICHT in den Code schreiben.
+# In Render -> Environment eintragen.
 
-app.secret_key = os.environ.get(
-    "GENGA_SECRET_KEY",
-    "change-this-secret"
-)
+app.secret_key = os.environ.get("GENGA_SECRET_KEY", "")
 
 DISCORD_WEBHOOK_URL = os.environ.get(
     "DISCORD_WEBHOOK_URL",
@@ -39,11 +35,15 @@ ADMIN_PASSWORD = os.environ.get(
     ""
 )
 
-# Mehrere Keys möglich:
-# GENGA_VALID_KEYS="GENGA-123,GENGA-456,GENGA-789"
+# Beispiel:
+# GENGA_VALID_KEYS=GENGA-123,GENGA-456,GENGA-789
+
 VALID_KEYS = [
     key.strip()
-    for key in os.environ.get("GENGA_VALID_KEYS", "").split(",")
+    for key in os.environ.get(
+        "GENGA_VALID_KEYS",
+        ""
+    ).split(",")
     if key.strip()
 ]
 
@@ -55,9 +55,29 @@ DOWNLOAD_DATEI = "genga-client-1.21.11.txt"
 
 DISCORD_URL = "https://discord.gg/VEEV2gaeB"
 
-# Pending Requests
-# request_id -> Daten
+# Anfragen werden hier gespeichert.
+# Hinweis: Nach einem Render-Neustart sind sie weg.
 PENDING_REQUESTS = {}
+
+
+# ============================================================
+# ADMIN LOGIN CHECK
+# ============================================================
+
+def admin_required(function):
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+
+        if not session.get("admin_authenticated"):
+            return redirect(
+                url_for("admin_login")
+            )
+
+        return function(*args, **kwargs)
+
+    return wrapper
+
 
 # ============================================================
 # HTML
@@ -71,12 +91,18 @@ HTML = """
 
 <meta charset="UTF-8">
 
-<meta name="viewport"
-      content="width=device-width, initial-scale=1.0">
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+>
 
 <title>Genga Client</title>
 
 <style>
+
+/* ============================================================
+   RESET
+   ============================================================ */
 
 * {
     box-sizing: border-box;
@@ -87,6 +113,10 @@ HTML = """
 html {
     scroll-behavior: smooth;
 }
+
+/* ============================================================
+   BODY
+   ============================================================ */
 
 body {
     min-height: 100vh;
@@ -118,11 +148,18 @@ body {
         #050507;
 }
 
+/* ============================================================
+   BACKGROUND
+   ============================================================ */
+
 .background {
     position: fixed;
     inset: 0;
+
     overflow: hidden;
+
     pointer-events: none;
+
     z-index: 0;
 }
 
@@ -185,32 +222,44 @@ body {
 .glow-one {
     top: -150px;
     left: -100px;
+
     background: #7c3aed;
 }
 
 .glow-two {
     right: -150px;
     bottom: -150px;
+
     background: #06b6d4;
 }
+
+/* ============================================================
+   HEADER
+   ============================================================ */
 
 header {
     position: relative;
     z-index: 10;
 
     max-width: 1200px;
+
     margin: auto;
 
-    padding: 28px 30px;
+    padding:
+        28px 30px;
 
     display: flex;
+
     align-items: center;
+
     justify-content: space-between;
 }
 
 .logo {
     font-size: 23px;
+
     font-weight: 900;
+
     letter-spacing: 5px;
 }
 
@@ -220,10 +269,13 @@ header {
 
 .status {
     display: flex;
+
     align-items: center;
+
     gap: 9px;
 
-    padding: 9px 15px;
+    padding:
+        9px 15px;
 
     border:
         1px solid
@@ -234,11 +286,13 @@ header {
     background:
         rgba(255,255,255,0.04);
 
-    backdrop-filter: blur(15px);
+    backdrop-filter:
+        blur(15px);
 
     color: #999;
 
     font-size: 12px;
+
     letter-spacing: 1px;
 }
 
@@ -254,12 +308,14 @@ header {
         0 0 8px #4ade80,
         0 0 18px rgba(74,222,128,0.5);
 
-    animation: pulse 2s infinite;
+    animation:
+        pulse 2s infinite;
 }
 
 @keyframes pulse {
 
-    0%, 100% {
+    0%,
+    100% {
         opacity: 1;
     }
 
@@ -268,8 +324,13 @@ header {
     }
 }
 
+/* ============================================================
+   MAIN
+   ============================================================ */
+
 main {
     position: relative;
+
     z-index: 5;
 
     min-height:
@@ -278,23 +339,30 @@ main {
     display: flex;
 
     justify-content: center;
+
     align-items: center;
 
-    padding: 70px 20px 100px;
+    padding:
+        70px 20px 100px;
 }
 
 .hero {
     width: 100%;
+
     max-width: 950px;
+
     text-align: center;
 }
 
 .badge {
     display: inline-flex;
+
     align-items: center;
 
     margin-bottom: 28px;
-    padding: 9px 16px;
+
+    padding:
+        9px 16px;
 
     border:
         1px solid
@@ -308,9 +376,11 @@ main {
     color: #c4b5fd;
 
     font-size: 11px;
+
     font-weight: 700;
 
     letter-spacing: 2px;
+
     text-transform: uppercase;
 }
 
@@ -335,6 +405,7 @@ h1 {
         );
 
     -webkit-background-clip: text;
+
     background-clip: text;
 
     color: transparent;
@@ -348,18 +419,25 @@ h1 {
 
 .subtitle {
     max-width: 650px;
+
     margin: auto;
 
     color: #92929e;
 
     font-size: 17px;
+
     line-height: 1.7;
 }
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
 
 .buttons {
     display: flex;
 
     justify-content: center;
+
     align-items: center;
 
     gap: 14px;
@@ -370,13 +448,17 @@ h1 {
 }
 
 .button {
+    position: relative;
+
     min-width: 200px;
 
-    padding: 16px 25px;
+    padding:
+        16px 25px;
 
     display: inline-flex;
 
     align-items: center;
+
     justify-content: center;
 
     border-radius: 13px;
@@ -384,6 +466,7 @@ h1 {
     text-decoration: none;
 
     font-size: 14px;
+
     font-weight: 800;
 
     transition:
@@ -415,7 +498,8 @@ h1 {
 }
 
 .primary:hover {
-    transform: translateY(-4px);
+    transform:
+        translateY(-4px);
 
     box-shadow:
         0 18px 50px
@@ -435,11 +519,13 @@ h1 {
         1px solid
         rgba(255,255,255,0.1);
 
-    backdrop-filter: blur(15px);
+    backdrop-filter:
+        blur(15px);
 }
 
 .secondary:hover {
-    transform: translateY(-4px);
+    transform:
+        translateY(-4px);
 
     border-color:
         rgba(255,255,255,0.25);
@@ -447,6 +533,120 @@ h1 {
     background:
         rgba(255,255,255,0.07);
 }
+
+/* ============================================================
+   KEY BOX
+   ============================================================ */
+
+.key-box {
+    max-width: 500px;
+
+    margin: 30px auto 0;
+
+    padding: 25px;
+
+    border:
+        1px solid
+        rgba(139,92,246,0.25);
+
+    border-radius: 17px;
+
+    background:
+        rgba(255,255,255,0.035);
+
+    backdrop-filter:
+        blur(18px);
+}
+
+.key-box h2 {
+    font-size: 18px;
+
+    margin-bottom: 8px;
+}
+
+.key-box p {
+    color: #858592;
+
+    font-size: 13px;
+
+    line-height: 1.6;
+
+    margin-bottom: 18px;
+}
+
+.key-input {
+    width: 100%;
+
+    padding:
+        14px 16px;
+
+    border-radius: 10px;
+
+    border:
+        1px solid
+        rgba(255,255,255,0.12);
+
+    outline: none;
+
+    background:
+        rgba(0,0,0,0.35);
+
+    color: white;
+
+    font-size: 14px;
+
+    margin-bottom: 12px;
+}
+
+.key-input:focus {
+    border-color:
+        #8b5cf6;
+}
+
+.key-submit {
+    width: 100%;
+
+    padding: 14px;
+
+    border: none;
+
+    border-radius: 10px;
+
+    color: white;
+
+    font-weight: 800;
+
+    cursor: pointer;
+
+    background:
+        linear-gradient(
+            135deg,
+            #7c3aed,
+            #4f46e5
+        );
+}
+
+.message {
+    max-width: 500px;
+
+    margin:
+        25px auto 0;
+
+    padding: 14px;
+
+    border-radius: 10px;
+
+    background:
+        rgba(255,255,255,0.05);
+
+    color: #aaa;
+
+    font-size: 13px;
+}
+
+/* ============================================================
+   FEATURES
+   ============================================================ */
 
 .features {
     display: grid;
@@ -476,7 +676,8 @@ h1 {
     background:
         rgba(255,255,255,0.035);
 
-    backdrop-filter: blur(18px);
+    backdrop-filter:
+        blur(18px);
 
     transition:
         transform 0.25s ease,
@@ -484,7 +685,8 @@ h1 {
 }
 
 .card:hover {
-    transform: translateY(-6px);
+    transform:
+        translateY(-6px);
 
     border-color:
         rgba(139,92,246,0.3);
@@ -497,6 +699,7 @@ h1 {
     display: flex;
 
     align-items: center;
+
     justify-content: center;
 
     margin-bottom: 17px;
@@ -515,6 +718,7 @@ h1 {
 
 .card h3 {
     margin-bottom: 8px;
+
     font-size: 15px;
 }
 
@@ -522,8 +726,13 @@ h1 {
     color: #80808c;
 
     font-size: 13px;
+
     line-height: 1.6;
 }
+
+/* ============================================================
+   DISCORD
+   ============================================================ */
 
 .discord-icon {
     color: #5865F2;
@@ -539,11 +748,13 @@ h1 {
     display: inline-flex;
 
     justify-content: center;
+
     align-items: center;
 
     margin-top: 18px;
 
-    padding: 10px 14px;
+    padding:
+        10px 14px;
 
     border-radius: 9px;
 
@@ -559,117 +770,31 @@ h1 {
     text-decoration: none;
 
     font-size: 12px;
+
     font-weight: 700;
+
+    transition:
+        0.2s ease;
 }
 
 .discord-button:hover {
-    transform: translateY(-2px);
+    transform:
+        translateY(-2px);
 
     background:
         rgba(88,101,242,0.25);
 
     border-color:
         rgba(88,101,242,0.5);
+
+    box-shadow:
+        0 8px 25px
+        rgba(88,101,242,0.15);
 }
 
 /* ============================================================
-   KEY BOX
+   FOOTER
    ============================================================ */
-
-.key-box {
-    max-width: 500px;
-
-    margin: 30px auto 0;
-
-    padding: 25px;
-
-    border:
-        1px solid
-        rgba(139,92,246,0.25);
-
-    border-radius: 17px;
-
-    background:
-        rgba(255,255,255,0.035);
-
-    backdrop-filter: blur(18px);
-}
-
-.key-box h2 {
-    font-size: 18px;
-    margin-bottom: 8px;
-}
-
-.key-box p {
-    color: #858592;
-    font-size: 13px;
-    margin-bottom: 18px;
-}
-
-.key-input {
-    width: 100%;
-
-    padding: 14px 16px;
-
-    border-radius: 10px;
-
-    border:
-        1px solid
-        rgba(255,255,255,0.12);
-
-    outline: none;
-
-    background:
-        rgba(0,0,0,0.35);
-
-    color: white;
-
-    font-size: 14px;
-
-    margin-bottom: 12px;
-}
-
-.key-input:focus {
-    border-color: #8b5cf6;
-}
-
-.key-submit {
-    width: 100%;
-
-    padding: 14px;
-
-    border: none;
-
-    border-radius: 10px;
-
-    color: white;
-
-    font-weight: 800;
-
-    cursor: pointer;
-
-    background:
-        linear-gradient(
-            135deg,
-            #7c3aed,
-            #4f46e5
-        );
-}
-
-.message {
-    margin-top: 18px;
-
-    padding: 12px;
-
-    border-radius: 10px;
-
-    background:
-        rgba(255,255,255,0.05);
-
-    color: #aaa;
-
-    font-size: 13px;
-}
 
 footer {
     position: relative;
@@ -684,6 +809,10 @@ footer {
 
     font-size: 11px;
 }
+
+/* ============================================================
+   MOBILE
+   ============================================================ */
 
 @media (max-width: 700px) {
 
@@ -709,11 +838,13 @@ footer {
 
     .button {
         width: 100%;
+
         max-width: 350px;
     }
 
     .features {
         grid-template-columns: 1fr;
+
         margin-top: 55px;
     }
 }
@@ -779,7 +910,9 @@ footer {
 
 <div class="key-box">
 
-    <h2>✓ Key bestätigt</h2>
+    <h2>
+        ✓ Key bestätigt
+    </h2>
 
     <p>
         Dein Key wurde bestätigt.
@@ -892,7 +1025,7 @@ footer {
 
 </div>
 
-<div class="card">
+<div class="card discord-card">
 
     <div class="icon discord-icon">
         💬
@@ -933,6 +1066,7 @@ footer {
 </html>
 """
 
+
 # ============================================================
 # HAUPTSEITE
 # ============================================================
@@ -953,10 +1087,11 @@ def index():
 
             if data["approved"]:
                 download_ready = True
+
             else:
                 message = (
-                    "⏳ Dein Key wurde gesendet. "
-                    "Warte auf die Bestätigung."
+                    "⏳ Dein Key wurde an das Genga-Team "
+                    "gesendet. Warte auf die Bestätigung."
                 )
 
     return render_template_string(
@@ -972,14 +1107,34 @@ def index():
 # KEY ANFORDERN
 # ============================================================
 
-@app.route("/request-download", methods=["POST"])
+@app.route(
+    "/request-download",
+    methods=["POST"]
+)
 def request_download():
 
-    entered_key = request.form.get("key", "").strip()
+    entered_key = request.form.get(
+        "key",
+        ""
+    ).strip()
 
-    # Key überprüfen
+    # --------------------------------------------------------
+    # Leerer Key
+    # --------------------------------------------------------
+
     if not entered_key:
-        return redirect(url_for("index"))
+
+        return render_template_string(
+            HTML,
+            discord_url=DISCORD_URL,
+            download_ready=False,
+            request_id=None,
+            message="❌ Bitte gib einen Key ein."
+        )
+
+    # --------------------------------------------------------
+    # Key überprüfen
+    # --------------------------------------------------------
 
     if entered_key not in VALID_KEYS:
 
@@ -991,8 +1146,11 @@ def request_download():
             message="❌ Dieser Key ist ungültig."
         )
 
-    # Neue Request-ID
-    request_id = uuid.uuid4().hex[:12]
+    # --------------------------------------------------------
+    # Request erstellen
+    # --------------------------------------------------------
+
+    request_id = uuid.uuid4().hex
 
     PENDING_REQUESTS[request_id] = {
         "key": entered_key,
@@ -1000,40 +1158,54 @@ def request_download():
         "created": time.time()
     }
 
-    # ========================================================
-    # DISCORD WEBHOOK
-    # ========================================================
+    # --------------------------------------------------------
+    # Discord Webhook
+    # --------------------------------------------------------
 
     if DISCORD_WEBHOOK_URL:
 
         try:
 
             payload = {
+                "content": "🔐 **Neue Genga Key-Anfrage**",
+
                 "embeds": [
                     {
-                        "title": "🔐 Neuer Genga Download Request",
+                        "title": "Genga Download Request",
+
                         "description":
-                            "Ein neuer Benutzer möchte den Genga Client herunterladen.",
+                            "Ein Benutzer möchte den Client herunterladen.",
+
                         "fields": [
+
                             {
                                 "name": "Key",
-                                "value": f"`{entered_key}`",
+                                "value":
+                                    f"`{entered_key}`",
                                 "inline": False
                             },
+
                             {
                                 "name": "Request ID",
-                                "value": f"`{request_id}`",
+                                "value":
+                                    f"`{request_id}`",
                                 "inline": False
                             }
+
                         ]
                     }
                 ]
             }
 
-            requests.post(
+            response = requests.post(
                 DISCORD_WEBHOOK_URL,
                 json=payload,
                 timeout=5
+            )
+
+            print(
+                "Discord Webhook Status:",
+                response.status_code
             )
 
         except Exception as error:
@@ -1042,6 +1214,12 @@ def request_download():
                 "Discord Webhook Fehler:",
                 error
             )
+
+    else:
+
+        print(
+            "WARNUNG: DISCORD_WEBHOOK_URL ist nicht gesetzt."
+        )
 
     return redirect(
         url_for(
@@ -1055,26 +1233,50 @@ def request_download():
 # STATUS
 # ============================================================
 
-@app.route("/status/<request_id>")
+@app.route(
+    "/status/<request_id>"
+)
 def status(request_id):
 
-    data = PENDING_REQUESTS.get(request_id)
+    data = PENDING_REQUESTS.get(
+        request_id
+    )
 
     if not data:
-        return "Request nicht gefunden.", 404
+
+        return jsonify({
+            "status": "not_found"
+        }), 404
 
     if data["approved"]:
-        return "approved"
 
-    return "pending"
+        return jsonify({
+            "status": "approved"
+        })
+
+    return jsonify({
+        "status": "pending"
+    })
 
 
 # ============================================================
 # ADMIN LOGIN
 # ============================================================
 
-@app.route("/admin", methods=["GET", "POST"])
-def admin():
+@app.route(
+    "/admin",
+    methods=["GET", "POST"]
+)
+def admin_login():
+
+    # Bereits eingeloggt
+    if session.get(
+        "admin_authenticated"
+    ):
+
+        return redirect(
+            url_for("admin_panel")
+        )
 
     if request.method == "POST":
 
@@ -1083,144 +1285,170 @@ def admin():
             ""
         )
 
-        if password == ADMIN_PASSWORD:
+        # Passwort niemals aus dem HTML nehmen.
+        # Es kommt ausschließlich aus Environment.
+        if (
+            ADMIN_PASSWORD
+            and password == ADMIN_PASSWORD
+        ):
 
-            session["admin"] = True
+            session.clear()
+
+            session[
+                "admin_authenticated"
+            ] = True
 
             return redirect(
-                url_for("admin")
+                url_for("admin_panel")
             )
 
-        return """
-        <h2>Falsches Passwort</h2>
-        <a href="/admin">Zurück</a>
-        """
+        return render_template_string(
+            """
+            <!DOCTYPE html>
 
-    if not session.get("admin"):
+            <html>
 
-        return """
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Genga Admin</title>
-            <style>
-                body {
-                    background:#050507;
-                    color:white;
-                    font-family:Arial;
-                    display:flex;
-                    justify-content:center;
-                    align-items:center;
-                    min-height:100vh;
-                }
+            <head>
 
-                form {
-                    background:#111118;
-                    padding:30px;
-                    border-radius:15px;
-                    width:350px;
-                }
+                <meta charset="UTF-8">
 
-                input {
-                    width:100%;
-                    padding:13px;
-                    margin:10px 0;
-                    background:#050507;
-                    color:white;
-                    border:1px solid #333;
-                    border-radius:8px;
-                }
+                <title>Genga Admin</title>
 
-                button {
-                    width:100%;
-                    padding:13px;
-                    background:#7c3aed;
-                    color:white;
-                    border:0;
-                    border-radius:8px;
-                    font-weight:bold;
-                }
-            </style>
-        </head>
+                <style>
 
-        <body>
+                    * {
+                        box-sizing:border-box;
+                    }
 
-            <form method="POST">
+                    body {
+                        margin:0;
+                        min-height:100vh;
 
-                <h2>Genga Admin</h2>
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
 
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Admin Passwort"
-                    required
-                >
+                        background:#050507;
 
-                <button>
-                    Login
-                </button>
+                        color:white;
 
-            </form>
+                        font-family:
+                            Arial,
+                            sans-serif;
+                    }
 
-        </body>
-        </html>
-        """
+                    .box {
+                        width:350px;
 
-    # ========================================================
-    # ADMIN PANEL
-    # ========================================================
+                        padding:30px;
 
-    requests_html = ""
+                        border-radius:16px;
 
-    for request_id, data in PENDING_REQUESTS.items():
+                        background:#111118;
 
-        age = int(time.time() - data["created"])
+                        border:
+                            1px solid
+                            rgba(255,255,255,.1);
+                    }
 
-        status_text = (
-            "✅ APPROVED"
-            if data["approved"]
-            else "⏳ PENDING"
+                    h1 {
+                        margin-top:0;
+                    }
+
+                    input {
+                        width:100%;
+
+                        padding:13px;
+
+                        margin:
+                            15px 0;
+
+                        border-radius:8px;
+
+                        border:
+                            1px solid #333;
+
+                        background:#050507;
+
+                        color:white;
+
+                        outline:none;
+                    }
+
+                    button {
+                        width:100%;
+
+                        padding:13px;
+
+                        border:0;
+
+                        border-radius:8px;
+
+                        background:
+                            linear-gradient(
+                                135deg,
+                                #7c3aed,
+                                #4f46e5
+                            );
+
+                        color:white;
+
+                        font-weight:bold;
+
+                        cursor:pointer;
+                    }
+
+                    .error {
+                        color:#f87171;
+
+                        font-size:13px;
+                    }
+
+                </style>
+
+            </head>
+
+            <body>
+
+                <div class="box">
+
+                    <h1>
+                        Genga Admin
+                    </h1>
+
+                    <p>
+                        Admin Login
+                    </p>
+
+                    <p class="error">
+                        Falsches Passwort.
+                    </p>
+
+                    <form method="POST">
+
+                        <input
+                            type="password"
+                            name="password"
+                            placeholder="Admin Passwort"
+                            autocomplete="current-password"
+                            required
+                        >
+
+                        <button>
+                            Login
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </body>
+
+            </html>
+            """
         )
 
-        requests_html += f"""
-
-        <div class="request">
-
-            <h3>
-                {status_text}
-            </h3>
-
-            <p>
-                Request ID:
-                <code>{request_id}</code>
-            </p>
-
-            <p>
-                Key:
-                <code>{data["key"]}</code>
-            </p>
-
-            <p>
-                Alter:
-                {age} Sekunden
-            </p>
-
-            <form
-                method="POST"
-                action="/admin/approve/{request_id}"
-            >
-
-                <button>
-                    ✓ Key bestätigen
-                </button>
-
-            </form>
-
-        </div>
-
-        """
-
-    return f"""
+    return """
     <!DOCTYPE html>
 
     <html>
@@ -1233,20 +1461,281 @@ def admin():
 
         <style>
 
-            body {{
+            * {
+                box-sizing:border-box;
+            }
+
+            body {
+                margin:0;
+                min-height:100vh;
+
+                display:flex;
+                align-items:center;
+                justify-content:center;
+
                 background:#050507;
+
                 color:white;
-                font-family:Arial;
-                padding:40px;
+
+                font-family:
+                    Arial,
+                    sans-serif;
+            }
+
+            .box {
+                width:350px;
+
+                padding:30px;
+
+                border-radius:16px;
+
+                background:#111118;
+
+                border:
+                    1px solid
+                    rgba(255,255,255,.1);
+            }
+
+            input {
+                width:100%;
+
+                padding:13px;
+
+                margin:15px 0;
+
+                border-radius:8px;
+
+                border:
+                    1px solid #333;
+
+                background:#050507;
+
+                color:white;
+
+                outline:none;
+            }
+
+            button {
+                width:100%;
+
+                padding:13px;
+
+                border:0;
+
+                border-radius:8px;
+
+                background:
+                    linear-gradient(
+                        135deg,
+                        #7c3aed,
+                        #4f46e5
+                    );
+
+                color:white;
+
+                font-weight:bold;
+
+                cursor:pointer;
+            }
+
+        </style>
+
+    </head>
+
+    <body>
+
+        <div class="box">
+
+            <h1>
+                Genga Admin
+            </h1>
+
+            <p>
+                Admin Login
+            </p>
+
+            <form method="POST">
+
+                <input
+                    type="password"
+                    name="password"
+                    placeholder="Admin Passwort"
+                    autocomplete="current-password"
+                    required
+                >
+
+                <button>
+                    Login
+                </button>
+
+            </form>
+
+        </div>
+
+    </body>
+
+    </html>
+    """
+
+
+# ============================================================
+# ADMIN PANEL
+# ============================================================
+
+@app.route(
+    "/admin/panel"
+)
+@admin_required
+def admin_panel():
+
+    requests_html = ""
+
+    if not PENDING_REQUESTS:
+
+        requests_html = """
+        <div class="empty">
+            Keine Download-Anfragen vorhanden.
+        </div>
+        """
+
+    else:
+
+        # Neueste Anfragen zuerst
+        sorted_requests = sorted(
+            PENDING_REQUESTS.items(),
+            key=lambda item: item[1]["created"],
+            reverse=True
+        )
+
+        for request_id, data in sorted_requests:
+
+            age = int(
+                time.time()
+                - data["created"]
+            )
+
+            if data["approved"]:
+
+                status_html = """
+                <div class="approved">
+                    ✓ APPROVED
+                </div>
+                """
+
+                button_html = ""
+
+            else:
+
+                status_html = """
+                <div class="pending">
+                    ⏳ PENDING
+                </div>
+                """
+
+                button_html = f"""
+                <form
+                    method="POST"
+                    action="/admin/approve/{request_id}"
+                >
+
+                    <button class="approve">
+                        ✓ Key bestätigen
+                    </button>
+
+                </form>
+                """
+
+            requests_html += f"""
+
+            <div class="request">
+
+                {status_html}
+
+                <p>
+                    <strong>Request ID</strong>
+                </p>
+
+                <code>
+                    {request_id}
+                </code>
+
+                <p>
+                    <strong>Key</strong>
+                </p>
+
+                <code>
+                    {data["key"]}
+                </code>
+
+                <p>
+                    <strong>Alter</strong>
+                </p>
+
+                <span>
+                    {age} Sekunden
+                </span>
+
+                {button_html}
+
+            </div>
+
+            """
+
+    return f"""
+    <!DOCTYPE html>
+
+    <html>
+
+    <head>
+
+        <meta charset="UTF-8">
+
+        <meta name="viewport"
+              content="width=device-width, initial-scale=1.0">
+
+        <title>Genga Admin Panel</title>
+
+        <style>
+
+            * {{
+                box-sizing:border-box;
+            }}
+
+            body {{
+                margin:0;
+
+                min-height:100vh;
+
+                padding:40px 20px;
+
+                background:#050507;
+
+                color:white;
+
+                font-family:
+                    Arial,
+                    sans-serif;
+            }}
+
+            .container {{
+                max-width:800px;
+
+                margin:auto;
             }}
 
             h1 {{
+                margin-bottom:8px;
+            }}
+
+            .subtitle {{
+                color:#777;
+
                 margin-bottom:30px;
             }}
 
             .request {{
-                max-width:600px;
                 padding:25px;
+
                 margin-bottom:15px;
 
                 background:#111118;
@@ -1258,23 +1747,79 @@ def admin():
                 border-radius:15px;
             }}
 
+            .request p {{
+                margin-top:18px;
+                margin-bottom:6px;
+            }}
+
             code {{
+                display:block;
+
+                padding:10px;
+
+                border-radius:7px;
+
+                background:#050507;
+
                 color:#c4b5fd;
+
+                word-break:break-all;
+            }}
+
+            .pending {{
+                color:#facc15;
+
+                font-weight:bold;
+            }}
+
+            .approved {{
+                color:#4ade80;
+
+                font-weight:bold;
             }}
 
             button {{
-                margin-top:15px;
+                margin-top:20px;
+
                 padding:12px 18px;
 
-                background:#7c3aed;
-                color:white;
-
                 border:0;
+
                 border-radius:8px;
 
-                cursor:pointer;
+                color:white;
 
                 font-weight:bold;
+
+                cursor:pointer;
+            }}
+
+            .approve {{
+                background:#7c3aed;
+            }}
+
+            .approve:hover {{
+                background:#6d28d9;
+            }}
+
+            .empty {{
+                padding:25px;
+
+                border-radius:15px;
+
+                background:#111118;
+
+                color:#777;
+            }}
+
+            .logout {{
+                display:inline-block;
+
+                margin-bottom:30px;
+
+                color:#aaa;
+
+                text-decoration:none;
             }}
 
         </style>
@@ -1283,11 +1828,26 @@ def admin():
 
     <body>
 
-        <h1>
-            Genga Admin Panel
-        </h1>
+        <div class="container">
 
-        {requests_html}
+            <h1>
+                Genga Admin Panel
+            </h1>
+
+            <p class="subtitle">
+                Download-Anfragen verwalten
+            </p>
+
+            <a
+                class="logout"
+                href="/admin/logout"
+            >
+                Abmelden
+            </a>
+
+            {requests_html}
+
+        </div>
 
     </body>
 
@@ -1296,29 +1856,51 @@ def admin():
 
 
 # ============================================================
-# ADMIN: KEY BESTÄTIGEN
+# ADMIN KEY BESTÄTIGEN
 # ============================================================
 
 @app.route(
     "/admin/approve/<request_id>",
     methods=["POST"]
 )
+@admin_required
 def approve(request_id):
 
-    if not session.get("admin"):
-
-        return "Nicht autorisiert.", 403
-
-    data = PENDING_REQUESTS.get(request_id)
+    data = PENDING_REQUESTS.get(
+        request_id
+    )
 
     if not data:
 
-        return "Request nicht gefunden.", 404
+        return (
+            "Request nicht gefunden.",
+            404
+        )
 
     data["approved"] = True
 
+    print(
+        f"Request {request_id} wurde bestätigt."
+    )
+
     return redirect(
-        url_for("admin")
+        url_for("admin_panel")
+    )
+
+
+# ============================================================
+# ADMIN LOGOUT
+# ============================================================
+
+@app.route(
+    "/admin/logout"
+)
+def admin_logout():
+
+    session.clear()
+
+    return redirect(
+        url_for("admin_login")
     )
 
 
@@ -1326,19 +1908,32 @@ def approve(request_id):
 # DOWNLOAD
 # ============================================================
 
-@app.route("/download/<request_id>")
+@app.route(
+    "/download/<request_id>"
+)
 def download(request_id):
 
-    data = PENDING_REQUESTS.get(request_id)
+    data = PENDING_REQUESTS.get(
+        request_id
+    )
 
+    # Request existiert nicht
     if not data:
 
-        return "Download nicht freigegeben.", 403
+        return (
+            "Download nicht freigegeben.",
+            403
+        )
 
+    # Noch nicht bestätigt
     if not data["approved"]:
 
-        return "Dein Key wurde noch nicht bestätigt.", 403
+        return (
+            "Dein Key wurde noch nicht bestätigt.",
+            403
+        )
 
+    # Datei suchen
     datei_pfad = os.path.join(
         os.path.dirname(
             os.path.abspath(__file__)
@@ -1346,10 +1941,17 @@ def download(request_id):
         DOWNLOAD_DATEI
     )
 
-    if not os.path.isfile(datei_pfad):
+    # Datei existiert nicht
+    if not os.path.isfile(
+        datei_pfad
+    ):
 
-        return "Download-Datei nicht gefunden.", 404
+        return (
+            "Download-Datei nicht gefunden.",
+            404
+        )
 
+    # Download
     return send_file(
         datei_pfad,
         as_attachment=True,
@@ -1365,11 +1967,13 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
+
         port=int(
             os.environ.get(
                 "PORT",
                 5000
             )
         ),
+
         debug=False
     )
