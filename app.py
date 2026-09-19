@@ -896,7 +896,7 @@ HTML = r"""
 
             <h1>
                 Minecraft client.<br>
-                <span>Nothing unnecessary.</span>
+                <span>THE BEST CLIENT OAT.</span>
             </h1>
 
             <p>
