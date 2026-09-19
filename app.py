@@ -17,13 +17,13 @@ from functools import wraps
 
 
 # ============================================================
-# GENGA CLIENT WEBSITE
+# GENGA CLIENT - FLASK WEBSITE
 # ============================================================
 
 app = Flask(__name__)
 
 # ------------------------------------------------------------
-# Configuration
+# CONFIG
 # ------------------------------------------------------------
 
 app.secret_key = os.environ.get("GENGA_SECRET_KEY", "change-this-secret-key")
@@ -31,7 +31,7 @@ app.secret_key = os.environ.get("GENGA_SECRET_KEY", "change-this-secret-key")
 DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
 
-GENGA_VALID_KEYS = [
+VALID_KEYS = [
     key.strip()
     for key in os.environ.get("GENGA_VALID_KEYS", "").split(",")
     if key.strip()
@@ -39,49 +39,105 @@ GENGA_VALID_KEYS = [
 
 DOWNLOAD_DATEI = "genga-client-1.21.11.txt"
 
-# IMPORTANT:
-# Replace this with your real Discord invite if necessary.
 DISCORD_URL = "https://discord.gg/VEEV2gaeB"
 
 ADMIN_URL = "https://genga-client.onrender.com/admin"
 
-
-# ------------------------------------------------------------
-# Temporary download requests
-# ------------------------------------------------------------
-#
-# Structure:
-#
-# {
-#     request_id: {
-#         "key": "...",
-#         "approved": False,
-#         "created": 1234567890
-#     }
-# }
-#
-# NOTE:
-# This is stored in RAM.
-# A Render restart clears this dictionary.
-#
-
+# Requests bleiben solange im RAM, wie die Render-Instanz läuft.
 PENDING_REQUESTS = {}
 
 
 # ============================================================
-# ADMIN AUTH
+# HELPERS
 # ============================================================
 
 def admin_required(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-
         if not session.get("admin_logged_in"):
             return redirect(url_for("admin"))
 
         return func(*args, **kwargs)
 
     return wrapper
+
+
+def cleanup_requests():
+    """
+    Löscht alte Download-Anfragen nach 24 Stunden.
+    """
+    now = time.time()
+    max_age = 60 * 60 * 24
+
+    expired = []
+
+    for request_id, data in PENDING_REQUESTS.items():
+        created = data.get("created", now)
+
+        if now - created > max_age:
+            expired.append(request_id)
+
+    for request_id in expired:
+        PENDING_REQUESTS.pop(request_id, None)
+
+
+def send_discord_notification(key, request_id):
+    """
+    Sendet eine neue Download-Anfrage an Discord.
+    """
+    if not DISCORD_WEBHOOK_URL:
+        print("DISCORD_WEBHOOK_URL ist nicht gesetzt.")
+        return False
+
+    payload = {
+        "embeds": [
+            {
+                "title": "GENGA CLIENT • DOWNLOAD REQUEST",
+                "description": (
+                    "Eine neue Download-Anfrage wurde erstellt."
+                ),
+                "color": 16728064,
+                "fields": [
+                    {
+                        "name": "Key",
+                        "value": f"`{key}`",
+                        "inline": False
+                    },
+                    {
+                        "name": "Request ID",
+                        "value": f"`{request_id}`",
+                        "inline": False
+                    },
+                    {
+                        "name": "Admin Panel",
+                        "value": ADMIN_URL,
+                        "inline": False
+                    }
+                ],
+                "footer": {
+                    "text": "GENGA Client"
+                }
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(
+            DISCORD_WEBHOOK_URL,
+            json=payload,
+            timeout=10
+        )
+
+        print("Discord Webhook Status:", response.status_code)
+
+        if response.status_code >= 400:
+            print("Discord Webhook Error:", response.text)
+
+        return response.ok
+
+    except Exception as error:
+        print("Discord Webhook Exception:", error)
+        return False
 
 
 # ============================================================
@@ -94,23 +150,35 @@ HTML = r"""
 <head>
 
     <meta charset="UTF-8">
-
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="theme-color"
-        content="#080706"
     >
 
     <title>GENGA Client</title>
 
     <style>
 
+        :root {
+            --bg: #080808;
+            --panel: #101010;
+            --panel-2: #131313;
+            --border: #292929;
+
+            --text: #f2f2f2;
+            --muted: #858585;
+
+            --accent: #ff4a00;
+            --accent-hover: #ff5d16;
+
+            --success: #39d98a;
+            --danger: #ff4d4d;
+        }
+
         * {
             box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         html {
@@ -118,31 +186,28 @@ HTML = r"""
         }
 
         body {
-            margin: 0;
             min-height: 100vh;
 
             background:
                 radial-gradient(
-                    circle at 15% 10%,
-                    rgba(255, 65, 0, 0.08),
-                    transparent 32%
+                    circle at 50% -20%,
+                    rgba(255, 74, 0, 0.10),
+                    transparent 42%
                 ),
-                radial-gradient(
-                    circle at 85% 90%,
-                    rgba(255, 95, 0, 0.05),
-                    transparent 30%
-                ),
-                #080706;
+                var(--bg);
 
-            color: #f1efed;
+            color: var(--text);
 
             font-family:
                 Inter,
                 -apple-system,
                 BlinkMacSystemFont,
                 "Segoe UI",
+                Roboto,
                 Arial,
                 sans-serif;
+
+            line-height: 1.5;
         }
 
         a {
@@ -155,312 +220,236 @@ HTML = r"""
             font: inherit;
         }
 
-        /* ====================================================
-           APP SHELL
-           ==================================================== */
+        /* =====================================================
+           NAVBAR
+           ===================================================== */
 
-        .page {
+        .navbar {
             width: 100%;
-            min-height: 100vh;
-            padding: 28px 18px 50px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(8, 8, 8, 0.94);
         }
 
-        .app-shell {
-            width: 100%;
-            max-width: 1120px;
-            margin: 0 auto;
+        .navbar-inner {
+            max-width: 1180px;
+            margin: auto;
 
-            border: 1px solid #292521;
-            background: #0d0c0b;
+            min-height: 72px;
 
-            box-shadow:
-                0 25px 80px rgba(0, 0, 0, 0.45);
-        }
-
-        /* ====================================================
-           TOP BAR
-           ==================================================== */
-
-        .topbar {
-            min-height: 68px;
+            padding: 0 24px;
 
             display: flex;
             align-items: center;
             justify-content: space-between;
-
-            padding: 0 24px;
-
-            border-bottom: 1px solid #292521;
-            background: #0b0a09;
+            gap: 20px;
         }
 
         .brand {
             display: flex;
             align-items: center;
             gap: 12px;
+
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
         }
 
         .brand-mark {
-            width: 11px;
-            height: 28px;
+            width: 9px;
+            height: 30px;
 
-            background: #ff4b00;
+            background: var(--accent);
 
-            transform: skewX(-18deg);
+            transform: skew(-14deg);
         }
 
-        .brand-name {
-            font-size: 18px;
-            font-weight: 800;
-            letter-spacing: 0.16em;
+        .brand span {
+            color: #fff;
         }
 
         .brand-version {
-            color: #77716b;
+            color: var(--muted);
             font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
+            font-weight: 600;
+            letter-spacing: 0.08em;
         }
 
-        .status {
+        .nav-status {
             display: flex;
             align-items: center;
             gap: 8px;
 
-            color: #8d8781;
+            color: var(--muted);
 
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 0.12em;
+            font-size: 12px;
             text-transform: uppercase;
+            letter-spacing: 0.08em;
         }
 
         .status-dot {
             width: 7px;
             height: 7px;
+
             border-radius: 50%;
-            background: #ff4b00;
-            box-shadow: 0 0 10px rgba(255, 75, 0, 0.4);
+            background: var(--success);
         }
 
-        /* ====================================================
-           HERO
-           ==================================================== */
+        /* =====================================================
+           PAGE
+           ===================================================== */
 
-        .hero {
-            padding: 58px 48px 44px;
+        .container {
+            width: min(1180px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 48px 0 70px;
+        }
 
-            border-bottom: 1px solid #292521;
+        /* =====================================================
+           HEADER
+           ===================================================== */
+
+        .page-header {
+            margin-bottom: 30px;
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 9px;
+
+            margin-bottom: 12px;
+
+            color: var(--accent);
+
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .eyebrow-line {
+            width: 24px;
+            height: 1px;
+            background: var(--accent);
+        }
+
+        .page-header h1 {
+            font-size: clamp(38px, 6vw, 64px);
+            line-height: 0.98;
+
+            font-weight: 850;
+            letter-spacing: -0.045em;
+
+            margin-bottom: 15px;
+        }
+
+        .page-header h1 span {
+            color: var(--accent);
+        }
+
+        .page-header p {
+            max-width: 650px;
+
+            color: var(--muted);
+
+            font-size: 15px;
+        }
+
+        /* =====================================================
+           TOP CARDS
+           ===================================================== */
+
+        .top-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+
+            margin-bottom: 14px;
+        }
+
+        .panel {
+            background: var(--panel);
+
+            border: 1px solid var(--border);
 
             position: relative;
             overflow: hidden;
         }
 
-        .hero::after {
+        .panel::before {
             content: "";
 
             position: absolute;
-            right: -100px;
-            top: 40px;
+            top: 0;
+            left: 0;
 
-            width: 280px;
-            height: 280px;
+            width: 3px;
+            height: 100%;
 
-            border: 1px solid rgba(255, 75, 0, 0.07);
-
-            transform: rotate(45deg);
-            pointer-events: none;
+            background: var(--accent);
         }
 
-        .eyebrow {
-            color: #ff5a0a;
+        .top-card {
+            min-height: 270px;
 
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
+            padding: 30px;
 
-            margin-bottom: 15px;
-        }
-
-        .hero h1 {
-            margin: 0;
-
-            font-size: clamp(42px, 7vw, 76px);
-            line-height: 0.95;
-
-            font-weight: 900;
-            letter-spacing: -0.055em;
-        }
-
-        .hero h1 span {
-            color: #ff4b00;
-        }
-
-        .hero-description {
-            max-width: 610px;
-
-            margin-top: 22px;
-
-            color: #8c857f;
-
-            font-size: 15px;
-            line-height: 1.7;
-        }
-
-        .hero-meta {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-
-            margin-top: 28px;
-        }
-
-        .meta-item {
-            border: 1px solid #2c2723;
-            background: #11100e;
-
-            padding: 8px 11px;
-
-            color: #77716b;
-
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.09em;
-            text-transform: uppercase;
-        }
-
-        .meta-item strong {
-            color: #d8d3cf;
-        }
-
-        /* ====================================================
-           MAIN GRID
-           ==================================================== */
-
-        .main-grid {
-            display: grid;
-            grid-template-columns: minmax(0, 1.4fr) minmax(310px, 0.8fr);
-        }
-
-        /* ====================================================
-           CONTENT
-           ==================================================== */
-
-        .content {
-            padding: 36px 40px;
-            border-right: 1px solid #292521;
-        }
-
-        .section-label {
-            margin-bottom: 18px;
-
-            color: #77716b;
-
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.16em;
-            text-transform: uppercase;
-        }
-
-        /* ====================================================
-           FEATURES
-           ==================================================== */
-
-        .features {
-            display: grid;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 10px;
-        }
-
-        .feature {
-            min-height: 125px;
-
-            padding: 18px;
-
-            border: 1px solid #292521;
-            background: #11100e;
-
-            transition:
-                border-color 0.15s ease,
-                background 0.15s ease;
-        }
-
-        .feature:hover {
-            border-color: #493229;
-            background: #141210;
-        }
-
-        .feature-number {
-            color: #ff4b00;
-
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.1em;
-        }
-
-        .feature-title {
-            margin-top: 18px;
-
-            font-size: 14px;
-            font-weight: 800;
-        }
-
-        .feature-description {
-            margin-top: 7px;
-
-            color: #77716b;
-
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        /* ====================================================
-           ACCESS PANEL
-           ==================================================== */
-
-        .access-panel {
-            padding: 36px 30px;
-
-            background: #0a0908;
-        }
-
-        .access-title {
-            margin: 0;
-
-            font-size: 22px;
-            font-weight: 850;
-            letter-spacing: -0.02em;
-        }
-
-        .access-description {
-            margin: 10px 0 24px;
-
-            color: #77716b;
-
-            font-size: 12px;
-            line-height: 1.6;
-        }
-
-        .key-form {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            justify-content: space-between;
+        }
+
+        .card-label {
+            color: var(--accent);
+
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+        }
+
+        .top-card h2 {
+            margin-top: 12px;
+
+            font-size: 30px;
+            line-height: 1.05;
+
+            letter-spacing: -0.025em;
+        }
+
+        .top-card p {
+            margin-top: 10px;
+
+            color: var(--muted);
+            font-size: 14px;
+
+            max-width: 440px;
+        }
+
+        /* =====================================================
+           ACCESS
+           ===================================================== */
+
+        .access-form {
+            margin-top: 24px;
+
+            display: flex;
+            gap: 8px;
         }
 
         .key-input {
             width: 100%;
 
-            border: 1px solid #302a26;
+            height: 48px;
+
+            padding: 0 15px;
+
+            color: #fff;
+            background: #0a0a0a;
+
+            border: 1px solid #303030;
+
             outline: none;
-
-            background: #11100e;
-
-            color: #f1efed;
-
-            padding: 14px 15px;
-
-            font-size: 13px;
 
             transition:
                 border-color 0.15s ease,
@@ -468,223 +457,146 @@ HTML = r"""
         }
 
         .key-input::placeholder {
-            color: #55504b;
+            color: #5e5e5e;
         }
 
         .key-input:focus {
-            border-color: #ff4b00;
-            background: #141210;
+            border-color: var(--accent);
+            background: #0d0d0d;
         }
 
         .button {
-            width: 100%;
+            height: 48px;
 
-            border: 0;
+            padding: 0 22px;
 
-            padding: 14px 16px;
+            border: 1px solid var(--accent);
 
-            background: #ff4b00;
-            color: #080706;
+            background: var(--accent);
+            color: #fff;
+
+            font-size: 12px;
+            font-weight: 800;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
 
             cursor: pointer;
 
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
+            white-space: nowrap;
 
             transition:
                 background 0.15s ease,
-                transform 0.1s ease;
+                border-color 0.15s ease,
+                transform 0.15s ease;
         }
 
         .button:hover {
-            background: #ff5c16;
-        }
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
 
-        .button:active {
-            transform: translateY(1px);
+            transform: translateY(-1px);
         }
 
         .button.secondary {
-            margin-top: 10px;
-
-            border: 1px solid #302a26;
-
             background: transparent;
-            color: #d5d0cc;
+            border-color: #363636;
         }
 
         .button.secondary:hover {
-            border-color: #ff4b00;
-            background: #15110e;
+            background: #171717;
+            border-color: #4a4a4a;
         }
 
-        /* ====================================================
-           APPROVED
-           ==================================================== */
-
-        .approved {
-            border: 1px solid #4a2b1d;
-            background: #120d09;
-
-            padding: 18px;
-        }
-
-        .approved-top {
-            display: flex;
+        .download-button {
+            display: inline-flex;
             align-items: center;
-            gap: 10px;
+            justify-content: center;
+
+            margin-top: 24px;
+
+            width: 100%;
         }
 
-        .approved-icon {
-            width: 24px;
-            height: 24px;
+        /* =====================================================
+           APPROVED
+           ===================================================== */
 
-            display: grid;
-            place-items: center;
+        .approved-box {
+            margin-top: 22px;
 
-            background: #ff4b00;
-            color: #080706;
+            padding: 16px;
 
-            font-size: 13px;
-            font-weight: 900;
+            background: rgba(57, 217, 138, 0.05);
+            border: 1px solid rgba(57, 217, 138, 0.25);
         }
 
         .approved-title {
-            color: #ff6a22;
+            color: var(--success);
 
-            font-size: 12px;
-            font-weight: 900;
-            letter-spacing: 0.08em;
+            font-size: 11px;
+            font-weight: 800;
+
             text-transform: uppercase;
+            letter-spacing: 0.1em;
         }
 
         .approved-text {
-            margin-top: 14px;
+            margin-top: 5px;
 
-            color: #918983;
-
-            font-size: 12px;
-            line-height: 1.6;
+            color: var(--muted);
+            font-size: 13px;
         }
 
-        /* ====================================================
+        /* =====================================================
            WAITING
-           ==================================================== */
+           ===================================================== */
 
         .waiting {
-            border: 1px solid #302a26;
-            background: #11100e;
+            margin-top: 22px;
 
-            padding: 17px;
-        }
-
-        .waiting-header {
             display: flex;
             align-items: center;
             gap: 10px;
+
+            color: var(--muted);
+
+            font-size: 12px;
         }
 
         .waiting-dot {
-            width: 8px;
-            height: 8px;
+            width: 7px;
+            height: 7px;
 
             border-radius: 50%;
-
-            background: #ff4b00;
+            background: var(--accent);
         }
 
-        .waiting-title {
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.06em;
-            text-transform: uppercase;
-        }
-
-        .waiting-text {
-            margin-top: 10px;
-
-            color: #77716b;
-
-            font-size: 11px;
-            line-height: 1.55;
-        }
-
-        /* ====================================================
-           MESSAGE
-           ==================================================== */
-
-        .message {
-            margin-bottom: 15px;
-
-            padding: 12px 14px;
-
-            border-left: 3px solid #ff4b00;
-
-            background: #15110e;
-
-            color: #aaa39d;
-
-            font-size: 12px;
-            line-height: 1.5;
-        }
-
-        /* ====================================================
+        /* =====================================================
            DISCORD
-           ==================================================== */
-
-        .discord {
-            margin-top: 30px;
-
-            border: 1px solid #292521;
-            background: #11100e;
-
-            padding: 20px;
-        }
-
-        .discord-label {
-            color: #ff5a0a;
-
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-        }
-
-        .discord-title {
-            margin-top: 8px;
-
-            font-size: 16px;
-            font-weight: 800;
-        }
-
-        .discord-text {
-            margin-top: 7px;
-
-            color: #77716b;
-
-            font-size: 12px;
-            line-height: 1.55;
-        }
+           ===================================================== */
 
         .discord-button {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 10px;
 
-            margin-top: 15px;
+            width: 100%;
+            height: 44px;
 
-            border: 1px solid #3a302a;
+            margin-top: 10px;
 
-            padding: 11px 14px;
+            border: 1px solid #303030;
 
-            background: #151210;
-            color: #e5e0dc;
+            background: #0c0c0c;
 
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.1em;
+            color: #e8e8e8;
+
+            font-size: 12px;
+            font-weight: 700;
+
+            letter-spacing: 0.05em;
             text-transform: uppercase;
 
             transition:
@@ -693,94 +605,234 @@ HTML = r"""
         }
 
         .discord-button:hover {
-            border-color: #ff4b00;
-            background: #1a120e;
+            border-color: #555;
+            background: #151515;
         }
 
-        /* ====================================================
-           FOOTER
-           ==================================================== */
+        .discord-icon {
+            font-size: 15px;
+        }
 
-        .footer {
+        /* =====================================================
+           INFO SECTION
+           ===================================================== */
+
+        .section-heading {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 20px;
 
-            padding: 18px 24px;
+            margin: 38px 0 14px;
+        }
 
-            border-top: 1px solid #292521;
+        .section-heading h2 {
+            font-size: 18px;
+            font-weight: 800;
 
-            color: #57514c;
+            letter-spacing: -0.01em;
+        }
+
+        .section-heading span {
+            color: #555;
 
             font-size: 10px;
             font-weight: 700;
-            letter-spacing: 0.06em;
+
+            letter-spacing: 0.1em;
             text-transform: uppercase;
         }
 
-        .footer a {
-            color: #77716b;
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
         }
 
-        .footer a:hover {
-            color: #ff5a0a;
+        .info-card {
+            min-height: 165px;
+
+            padding: 24px;
+
+            background: var(--panel);
+
+            border: 1px solid var(--border);
+
+            transition:
+                border-color 0.15s ease,
+                transform 0.15s ease;
         }
 
-        /* ====================================================
-           RESPONSIVE
-           ==================================================== */
+        .info-card:hover {
+            border-color: #3a3a3a;
+            transform: translateY(-2px);
+        }
 
-        @media (max-width: 800px) {
+        .info-number {
+            color: var(--accent);
 
-            .page {
-                padding: 12px;
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.1em;
+        }
+
+        .info-card h3 {
+            margin-top: 15px;
+
+            font-size: 17px;
+            font-weight: 750;
+        }
+
+        .info-card p {
+            margin-top: 7px;
+
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           VERSION / CLIENT INFO
+           ===================================================== */
+
+        .details {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+
+            margin-top: 14px;
+
+            background: var(--border);
+            border: 1px solid var(--border);
+        }
+
+        .detail {
+            padding: 20px;
+
+            background: var(--panel);
+        }
+
+        .detail-label {
+            color: #626262;
+
+            font-size: 9px;
+            font-weight: 800;
+
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .detail-value {
+            margin-top: 7px;
+
+            color: #ededed;
+
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        /* =====================================================
+           ALERT
+           ===================================================== */
+
+        .alert {
+            margin-bottom: 18px;
+
+            padding: 13px 15px;
+
+            border: 1px solid rgba(255, 74, 0, 0.35);
+            background: rgba(255, 74, 0, 0.06);
+
+            color: #ff9b73;
+
+            font-size: 13px;
+        }
+
+        /* =====================================================
+           FOOTER
+           ===================================================== */
+
+        footer {
+            margin-top: 55px;
+            padding-top: 20px;
+
+            border-top: 1px solid var(--border);
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            gap: 20px;
+
+            color: #555;
+
+            font-size: 11px;
+        }
+
+        footer strong {
+            color: #777;
+        }
+
+        /* =====================================================
+           MOBILE
+           ===================================================== */
+
+        @media (max-width: 760px) {
+
+            .container {
+                width: min(100% - 22px, 1180px);
+                padding-top: 32px;
             }
 
-            .topbar {
-                padding: 0 17px;
+            .navbar-inner {
+                padding: 0 14px;
             }
 
-            .hero {
-                padding: 42px 25px 34px;
+            .nav-status {
+                display: none;
             }
 
-            .main-grid {
+            .top-grid {
                 grid-template-columns: 1fr;
             }
 
-            .content {
-                border-right: 0;
-                border-bottom: 1px solid #292521;
-                padding: 28px 20px;
-            }
-
-            .access-panel {
-                padding: 28px 20px;
-            }
-
-            .features {
+            .info-grid {
                 grid-template-columns: 1fr;
             }
 
-            .footer {
+            .details {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .access-form {
+                flex-direction: column;
+            }
+
+            .access-form .button {
+                width: 100%;
+            }
+
+            .top-card {
+                min-height: auto;
+            }
+
+            footer {
                 flex-direction: column;
                 align-items: flex-start;
             }
         }
 
-        @media (max-width: 500px) {
+        @media (max-width: 430px) {
 
-            .brand-version {
-                display: none;
+            .page-header h1 {
+                font-size: 42px;
             }
 
-            .hero h1 {
-                font-size: 48px;
+            .top-card {
+                padding: 23px;
             }
 
-            .hero-description {
-                font-size: 13px;
+            .details {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -790,309 +842,176 @@ HTML = r"""
 
 <body>
 
-<div class="page">
+    <!-- =====================================================
+         NAVBAR
+         ===================================================== -->
 
-    <main class="app-shell">
+    <nav class="navbar">
 
-        <!-- ==================================================
-             TOP BAR
-             ================================================== -->
-
-        <header class="topbar">
+        <div class="navbar-inner">
 
             <a href="/" class="brand">
 
-                <span class="brand-mark"></span>
+                <div class="brand-mark"></div>
 
-                <span class="brand-name">
-                    GENGA
-                </span>
+                <span>GENGA</span>
 
                 <span class="brand-version">
-                    CLIENT / 1.21.11
+                    1.21.11
                 </span>
 
             </a>
 
-            <div class="status">
+            <div class="nav-status">
 
                 <span class="status-dot"></span>
 
-                SYSTEM ONLINE
+                System Online
 
             </div>
+
+        </div>
+
+    </nav>
+
+
+    <!-- =====================================================
+         MAIN
+         ===================================================== -->
+
+    <main class="container">
+
+
+        <!-- HEADER -->
+
+        <header class="page-header">
+
+            <div class="eyebrow">
+
+                <span class="eyebrow-line"></span>
+
+                GENGA CLIENT
+
+            </div>
+
+            <h1>
+                Minecraft client.<br>
+                <span>Nothing unnecessary.</span>
+            </h1>
+
+            <p>
+                Access the GENGA Client for Minecraft 1.21.11.
+                Enter your access key below to request access to
+                the client download.
+            </p>
 
         </header>
 
 
-        <!-- ==================================================
-             HERO
-             ================================================== -->
+        <!-- ALERT -->
 
-        <section class="hero">
+        {% if message %}
 
-            <div class="eyebrow">
-                Minecraft Client
+            <div class="alert">
+                {{ message }}
             </div>
 
-            <h1>
-                GENGA <span>CLIENT</span>
-            </h1>
-
-            <p class="hero-description">
-                A clean, lightweight client experience for Minecraft
-                1.21.11. Enter your access key to request your download.
-            </p>
-
-            <div class="hero-meta">
-
-                <div class="meta-item">
-                    Version <strong>1.21.11</strong>
-                </div>
-
-                <div class="meta-item">
-                    Loader <strong>Fabric</strong>
-                </div>
-
-                <div class="meta-item">
-                    Access <strong>Key Required</strong>
-                </div>
-
-            </div>
-
-        </section>
+        {% endif %}
 
 
-        <!-- ==================================================
-             MAIN CONTENT
-             ================================================== -->
+        <!-- =================================================
+             TOP: DOWNLOAD + ACCESS
+             ================================================= -->
 
-        <div class="main-grid">
-
-
-            <!-- ==================================================
-                 FEATURES
-                 ================================================== -->
-
-            <section class="content">
-
-                <div class="section-label">
-                    Client Overview
-                </div>
-
-                <div class="features">
-
-                    <article class="feature">
-
-                        <div class="feature-number">
-                            01
-                        </div>
-
-                        <div class="feature-title">
-                            Clean Interface
-                        </div>
-
-                        <div class="feature-description">
-                            Minimal dark interface inspired by the
-                            GENGA client GUI.
-                        </div>
-
-                    </article>
+        <section class="top-grid">
 
 
-                    <article class="feature">
+            <!-- DOWNLOAD -->
 
-                        <div class="feature-number">
-                            02
-                        </div>
+            <div class="panel top-card">
 
-                        <div class="feature-title">
-                            Lightweight
-                        </div>
+                <div>
 
-                        <div class="feature-description">
-                            Designed around a compact client architecture
-                            without unnecessary visual elements.
-                        </div>
-
-                    </article>
-
-
-                    <article class="feature">
-
-                        <div class="feature-number">
-                            03
-                        </div>
-
-                        <div class="feature-title">
-                            HUD System
-                        </div>
-
-                        <div class="feature-description">
-                            Modular HUD elements and configurable client
-                            components.
-                        </div>
-
-                    </article>
-
-
-                    <article class="feature">
-
-                        <div class="feature-number">
-                            04
-                        </div>
-
-                        <div class="feature-title">
-                            Minecraft 1.21.11
-                        </div>
-
-                        <div class="feature-description">
-                            Built specifically around the current GENGA
-                            1.21.11 project.
-                        </div>
-
-                    </article>
-
-                </div>
-
-
-                <!-- ==================================================
-                     DISCORD
-                     ================================================== -->
-
-                <div class="discord">
-
-                    <div class="discord-label">
-                        Community
+                    <div class="card-label">
+                        01 / DOWNLOAD
                     </div>
 
-                    <div class="discord-title">
-                        Join the GENGA Discord
-                    </div>
+                    <h2>
+                        GENGA Client
+                    </h2>
 
-                    <div class="discord-text">
-                        Get updates, announcements, support and information
-                        about new GENGA Client releases.
-                    </div>
-
-                    <!-- THIS LINK REMAINS ACTIVE -->
-                    <a
-                        class="discord-button"
-                        href="{{ discord_url }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Join Discord
-                    </a>
+                    <p>
+                        Minecraft 1.21.11 client build.
+                        The download becomes available after
+                        your access request has been approved.
+                    </p>
 
                 </div>
-
-            </section>
-
-
-            <!-- ==================================================
-                 ACCESS
-                 ================================================== -->
-
-            <aside class="access-panel">
-
-                <div class="section-label">
-                    Client Access
-                </div>
-
-                <h2 class="access-title">
-                    Download Access
-                </h2>
-
-                <p class="access-description">
-                    Enter your valid GENGA access key. Your request will
-                    be sent to the administration system for approval.
-                </p>
-
-
-                {% if message %}
-
-                    <div class="message">
-                        {{ message }}
-                    </div>
-
-                {% endif %}
 
 
                 {% if download_ready %}
 
-                    <!-- ==================================================
-                         APPROVED STATE
-                         ================================================== -->
+                    <div class="approved-box">
 
-                    <div class="approved">
-
-                        <div class="approved-top">
-
-                            <div class="approved-icon">
-                                ✓
-                            </div>
-
-                            <div class="approved-title">
-                                Access Granted
-                            </div>
-
+                        <div class="approved-title">
+                            Access granted
                         </div>
 
                         <div class="approved-text">
-                            Your key has been approved. The GENGA Client
-                            download is now available.
+                            Your request has been approved.
+                            The client is ready to download.
                         </div>
 
                     </div>
 
                     <a
-                        class="button"
+                        class="button download-button"
                         href="{{ url_for('download', request_id=request_id) }}"
-                        style="
-                            display:block;
-                            text-align:center;
-                            margin-top:10px;
-                        "
                     >
-                        Download GENGA Client
+                        Download Client
                     </a>
-
-
-                {% elif request_id %}
-
-                    <!-- ==================================================
-                         WAITING STATE
-                         ================================================== -->
-
-                    <div class="waiting">
-
-                        <div class="waiting-header">
-
-                            <span class="waiting-dot"></span>
-
-                            <span class="waiting-title">
-                                Waiting for approval
-                            </span>
-
-                        </div>
-
-                        <div class="waiting-text">
-                            Your request has been submitted. Keep this
-                            page open while the request is being reviewed.
-                        </div>
-
-                    </div>
-
 
                 {% else %}
 
-                    <!-- ==================================================
-                         KEY FORM
-                         ================================================== -->
+                    <div class="waiting">
+
+                        <span class="waiting-dot"></span>
+
+                        Waiting for access approval
+
+                    </div>
+
+                {% endif %}
+
+            </div>
+
+
+            <!-- ACCESS -->
+
+            <div class="panel top-card">
+
+                <div>
+
+                    <div class="card-label">
+                        02 / ACCESS
+                    </div>
+
+                    <h2>
+                        Enter your key
+                    </h2>
+
+                    <p>
+                        Enter your valid GENGA access key.
+                        A request will then be sent for approval.
+                    </p>
+
+                </div>
+
+
+                {% if not download_ready %}
 
                     <form
-                        class="key-form"
+                        class="access-form"
                         method="POST"
                         action="{{ url_for('request_download') }}"
                     >
@@ -1101,7 +1020,7 @@ HTML = r"""
                             class="key-input"
                             type="text"
                             name="key"
-                            placeholder="Enter access key"
+                            placeholder="GENGA-XXXX-XXXX"
                             autocomplete="off"
                             required
                         >
@@ -1110,182 +1029,328 @@ HTML = r"""
                             class="button"
                             type="submit"
                         >
-                            Request Download
+                            Request
                         </button>
 
                     </form>
 
+                {% else %}
+
+                    <div class="approved-box">
+
+                        <div class="approved-title">
+                            Verified
+                        </div>
+
+                        <div class="approved-text">
+                            Your access request has already been
+                            approved for this session.
+                        </div>
+
+                    </div>
+
                 {% endif %}
 
 
-                <!-- Discord remains available in the access panel too -->
+                <!-- DISCORD BUTTON -->
 
                 <a
-                    class="button secondary"
+                    class="discord-button"
                     href="{{ discord_url }}"
                     target="_blank"
                     rel="noopener noreferrer"
                 >
-                    Open Discord
+                    <span class="discord-icon">◈</span>
+                    Join GENGA Discord
                 </a>
 
-            </aside>
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             INFORMATION
+             ================================================= -->
+
+        <div class="section-heading">
+
+            <h2>
+                Information
+            </h2>
+
+            <span>
+                Client overview
+            </span>
 
         </div>
 
 
-        <!-- ==================================================
+        <section class="info-grid">
+
+
+            <div class="info-card">
+
+                <div class="info-number">
+                    01
+                </div>
+
+                <h3>
+                    Clean Interface
+                </h3>
+
+                <p>
+                    A compact client interface focused on
+                    functionality without unnecessary visual clutter.
+                </p>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <div class="info-number">
+                    02
+                </div>
+
+                <h3>
+                    Modular
+                </h3>
+
+                <p>
+                    Client functionality is organized into modules
+                    that can be enabled and configured individually.
+                </p>
+
+            </div>
+
+
+            <div class="info-card">
+
+                <div class="info-number">
+                    03
+                </div>
+
+                <h3>
+                    Minecraft 1.21.11
+                </h3>
+
+                <p>
+                    This download page is configured for the
+                    GENGA Client 1.21.11 build.
+                </p>
+
+            </div>
+
+        </section>
+
+
+        <!-- =================================================
+             DETAILS
+             ================================================= -->
+
+        <div class="details">
+
+
+            <div class="detail">
+
+                <div class="detail-label">
+                    Client
+                </div>
+
+                <div class="detail-value">
+                    GENGA Client
+                </div>
+
+            </div>
+
+
+            <div class="detail">
+
+                <div class="detail-label">
+                    Version
+                </div>
+
+                <div class="detail-value">
+                    1.21.11
+                </div>
+
+            </div>
+
+
+            <div class="detail">
+
+                <div class="detail-label">
+                    Loader
+                </div>
+
+                <div class="detail-value">
+                    Fabric
+                </div>
+
+            </div>
+
+
+            <div class="detail">
+
+                <div class="detail-label">
+                    Access
+                </div>
+
+                <div class="detail-value">
+                    Key Required
+                </div>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
              FOOTER
-             ================================================== -->
+             ================================================= -->
 
-        <footer class="footer">
+        <footer>
 
-            <span>
-                GENGA CLIENT
-            </span>
-
-            <span>
+            <div>
+                <strong>GENGA Client</strong>
+                &nbsp; / &nbsp;
                 Minecraft 1.21.11
-            </span>
+            </div>
 
-            <a
-                href="{{ discord_url }}"
-                target="_blank"
-                rel="noopener noreferrer"
-            >
-                Discord
-            </a>
+            <div>
+                Access system
+            </div>
 
         </footer>
 
+
     </main>
 
-</div>
+
+    <!-- =====================================================
+         APPROVAL SCRIPT
+         ===================================================== -->
+
+    <script>
+
+        const requestId = {{ request_id|tojson }};
+
+        const approvalView =
+            {{ approval_view|tojson }};
+
+        let approvalHandled = false;
 
 
-<!-- ==========================================================
-     APPROVAL CHECK
-     ========================================================== -->
+        async function checkStatus() {
 
-<script>
+            if (!requestId) {
+                return;
+            }
 
-    const requestId = {{ request_id|tojson }};
+            if (approvalView) {
+                return;
+            }
 
-    /*
-     * approved_view becomes true after the ONE navigation
-     * that happens when the admin approves the request.
-     *
-     * On that page we DO NOT start polling again.
-     */
-
-    const approvedView = {{ approved_view|tojson }};
-
-    let approvalHandled = false;
+            if (approvalHandled) {
+                return;
+            }
 
 
-    async function checkStatus() {
+            try {
 
-        /*
-         * Never do another check after approval.
-         */
-        if (!requestId || approvedView || approvalHandled) {
-            return;
-        }
-
-
-        try {
-
-            const response = await fetch(
-                "/status/" + encodeURIComponent(requestId),
-                {
-                    method: "GET",
-                    cache: "no-store",
-                    headers: {
-                        "Accept": "application/json"
+                const response = await fetch(
+                    "/status/" +
+                    encodeURIComponent(requestId),
+                    {
+                        method: "GET",
+                        cache: "no-store"
                     }
+                );
+
+
+                if (!response.ok) {
+
+                    scheduleNextCheck();
+
+                    return;
                 }
-            );
 
 
-            if (!response.ok) {
+                const data = await response.json();
 
-                /*
-                 * Request may have disappeared after a server restart.
-                 * Just try again later.
-                 */
+
+                if (data.status === "approved") {
+
+                    /*
+                     * IMPORTANT:
+                     *
+                     * Stop checking immediately.
+                     * Then perform exactly ONE navigation
+                     * to the approved page.
+                     */
+
+                    approvalHandled = true;
+
+
+                    window.location.replace(
+                        "/?request=" +
+                        encodeURIComponent(requestId) +
+                        "&approved=1"
+                    );
+
+                    return;
+                }
+
 
                 scheduleNextCheck();
 
-                return;
-            }
+            } catch (error) {
 
-
-            const data = await response.json();
-
-
-            if (data.status === "approved") {
-
-                /*
-                 * IMPORTANT:
-                 *
-                 * Stop the polling completely.
-                 *
-                 * Then perform exactly ONE navigation to the
-                 * approved page.
-                 */
-
-                approvalHandled = true;
-
-                window.location.replace(
-                    "/?request=" +
-                    encodeURIComponent(requestId) +
-                    "&approved=1"
+                console.log(
+                    "Approval status check failed:",
+                    error
                 );
 
+                scheduleNextCheck();
+            }
+        }
+
+
+        function scheduleNextCheck() {
+
+            if (approvalHandled) {
                 return;
             }
 
-
-            /*
-             * Still pending.
-             */
-            scheduleNextCheck();
-
-        } catch (error) {
-
-            /*
-             * Network error:
-             * retry later.
-             */
-
-            scheduleNextCheck();
-        }
-    }
-
-
-    function scheduleNextCheck() {
-
-        if (!approvalHandled && !approvedView) {
+            if (approvalView) {
+                return;
+            }
 
             setTimeout(checkStatus, 2000);
-
         }
-    }
 
 
-    /*
-     * Only start polling when we are actually waiting
-     * for an approval.
-     */
+        /*
+         * Start checking only while approval is pending.
+         *
+         * Once approved:
+         *
+         * pending page
+         *       ↓
+         * ONE navigation
+         *       ↓
+         * approved page
+         *       ↓
+         * NO MORE POLLING
+         */
 
-    if (requestId && !approvedView) {
+        if (requestId && !approvalView) {
+            checkStatus();
+        }
 
-        checkStatus();
-
-    }
-
-</script>
-
+    </script>
 
 </body>
 </html>
@@ -1299,14 +1364,25 @@ HTML = r"""
 @app.route("/", methods=["GET"])
 def index():
 
+    cleanup_requests()
+
     request_id = request.args.get("request")
 
-    approved_view = request.args.get("approved") == "1"
+    message = None
 
-    message = request.args.get("message")
+    if request.args.get("error") == "invalid":
+        message = "The entered access key is invalid."
+
+    elif request.args.get("error") == "missing":
+        message = "Please enter an access key."
+
+    elif request.args.get("error") == "expired":
+        message = "This download request no longer exists."
+
+    elif request.args.get("error") == "notapproved":
+        message = "Your request has not been approved yet."
 
     download_ready = False
-
 
     if request_id:
 
@@ -1314,19 +1390,21 @@ def index():
 
         if request_data:
 
-            if request_data.get("approved"):
-
+            if request_data.get("approved") is True:
                 download_ready = True
 
+    approval_view = (
+        request.args.get("approved") == "1"
+        and download_ready
+    )
 
     return render_template_string(
         HTML,
-
         request_id=request_id,
-        approved_view=approved_view,
         download_ready=download_ready,
-        message=message,
-        discord_url=DISCORD_URL
+        approval_view=approval_view,
+        discord_url=DISCORD_URL,
+        message=message
     )
 
 
@@ -1337,6 +1415,8 @@ def index():
 @app.route("/request-download", methods=["POST"])
 def request_download():
 
+    cleanup_requests()
+
     key = request.form.get("key", "").strip()
 
 
@@ -1345,28 +1425,20 @@ def request_download():
         return redirect(
             url_for(
                 "index",
-                message="Please enter an access key."
+                error="missing"
             )
         )
 
 
-    # --------------------------------------------------------
-    # Validate key
-    # --------------------------------------------------------
-
-    if key not in GENGA_VALID_KEYS:
+    if key not in VALID_KEYS:
 
         return redirect(
             url_for(
                 "index",
-                message="Invalid access key."
+                error="invalid"
             )
         )
 
-
-    # --------------------------------------------------------
-    # Create request
-    # --------------------------------------------------------
 
     request_id = str(uuid.uuid4())
 
@@ -1377,48 +1449,24 @@ def request_download():
 
         "approved": False,
 
-        "created": time.time()
+        "created": time.time(),
 
     }
 
 
-    # --------------------------------------------------------
-    # Discord webhook
-    # --------------------------------------------------------
-
-    if DISCORD_WEBHOOK_URL:
-
-        webhook_payload = {
-
-            "content": (
-                "## GENGA Client — Download Request\n\n"
-                f"**Key:** `{key}`\n"
-                f"**Request ID:** `{request_id}`\n\n"
-                f"**Approve:** {ADMIN_URL}/admin/panel"
-            )
-
-        }
+    webhook_success = send_discord_notification(
+        key,
+        request_id
+    )
 
 
-        try:
+    if not webhook_success:
 
-            requests.post(
-                DISCORD_WEBHOOK_URL,
-                json=webhook_payload,
-                timeout=10
-            )
+        print(
+            "WARNUNG: Discord-Benachrichtigung "
+            "konnte nicht gesendet werden."
+        )
 
-        except requests.RequestException as error:
-
-            print(
-                "Discord webhook error:",
-                error
-            )
-
-
-    # --------------------------------------------------------
-    # Redirect to waiting page
-    # --------------------------------------------------------
 
     return redirect(
         url_for(
@@ -1440,27 +1488,21 @@ def status(request_id):
 
     if not request_data:
 
-        return jsonify(
-            {
-                "status": "not_found"
-            }
-        ), 404
+        return jsonify({
+            "status": "not_found"
+        }), 404
 
 
-    if request_data.get("approved"):
+    if request_data.get("approved") is True:
 
-        return jsonify(
-            {
-                "status": "approved"
-            }
-        )
+        return jsonify({
+            "status": "approved"
+        })
 
 
-    return jsonify(
-        {
-            "status": "pending"
-        }
-    )
+    return jsonify({
+        "status": "pending"
+    })
 
 
 # ============================================================
@@ -1496,107 +1538,116 @@ ADMIN_LOGIN_HTML = r"""
             align-items: center;
             justify-content: center;
 
-            padding: 20px;
-
-            background: #080706;
-            color: #f0ece8;
+            background: #080808;
+            color: #fff;
 
             font-family:
                 Inter,
                 -apple-system,
                 BlinkMacSystemFont,
                 "Segoe UI",
-                Arial,
                 sans-serif;
         }
 
-        .panel {
-            width: 100%;
-            max-width: 420px;
-
-            border: 1px solid #292521;
-
-            background: #0d0c0b;
+        .box {
+            width: min(420px, calc(100% - 30px));
 
             padding: 30px;
 
-            box-shadow:
-                0 25px 80px rgba(0, 0, 0, 0.5);
+            background: #101010;
+
+            border: 1px solid #292929;
+
+            position: relative;
         }
 
-        .mark {
-            width: 10px;
-            height: 27px;
+        .box::before {
+            content: "";
 
-            background: #ff4b00;
+            position: absolute;
 
-            transform: skewX(-18deg);
+            top: 0;
+            left: 0;
 
-            margin-bottom: 20px;
+            width: 3px;
+            height: 100%;
+
+            background: #ff4a00;
+        }
+
+        .label {
+            color: #ff4a00;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
         }
 
         h1 {
-            margin: 0;
+            margin: 10px 0;
 
-            font-size: 25px;
-            font-weight: 900;
+            font-size: 30px;
         }
 
         p {
-            color: #77716b;
-
-            font-size: 12px;
-            line-height: 1.6;
+            color: #777;
+            font-size: 13px;
         }
 
         input {
             width: 100%;
 
-            margin-top: 12px;
+            height: 48px;
 
-            padding: 14px;
+            margin-top: 20px;
 
-            border: 1px solid #302a26;
-            outline: none;
+            padding: 0 14px;
 
-            background: #11100e;
+            background: #080808;
+
             color: #fff;
+
+            border: 1px solid #303030;
+
+            outline: none;
         }
 
         input:focus {
-            border-color: #ff4b00;
+            border-color: #ff4a00;
         }
 
         button {
             width: 100%;
 
+            height: 48px;
+
             margin-top: 10px;
 
-            padding: 14px;
+            border: 1px solid #ff4a00;
 
-            border: 0;
+            background: #ff4a00;
 
-            background: #ff4b00;
-            color: #080706;
+            color: #fff;
+
+            font-weight: 800;
+
+            text-transform: uppercase;
+
+            letter-spacing: 0.08em;
 
             cursor: pointer;
+        }
 
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
+        button:hover {
+            background: #ff5d16;
         }
 
         .error {
-            margin-top: 15px;
+            margin-top: 14px;
 
-            padding: 12px;
-
-            border-left: 3px solid #ff4b00;
-
-            background: #15110e;
-
-            color: #a69e97;
+            color: #ff6666;
 
             font-size: 12px;
         }
@@ -1607,14 +1658,18 @@ ADMIN_LOGIN_HTML = r"""
 
 <body>
 
-    <div class="panel">
+    <div class="box">
 
-        <div class="mark"></div>
+        <div class="label">
+            GENGA / ADMIN
+        </div>
 
-        <h1>GENGA ADMIN</h1>
+        <h1>
+            Admin Panel
+        </h1>
 
         <p>
-            Administrative access required.
+            Sign in to manage download requests.
         </p>
 
         <form method="POST">
@@ -1623,6 +1678,7 @@ ADMIN_LOGIN_HTML = r"""
                 type="password"
                 name="password"
                 placeholder="Admin password"
+                autocomplete="current-password"
                 required
             >
 
@@ -1653,11 +1709,7 @@ def admin():
 
     if request.method == "POST":
 
-        password = request.form.get(
-            "password",
-            ""
-        )
-
+        password = request.form.get("password", "")
 
         if password == ADMIN_PASSWORD:
 
@@ -1667,10 +1719,16 @@ def admin():
                 url_for("admin_panel")
             )
 
-
         return render_template_string(
             ADMIN_LOGIN_HTML,
-            error="Invalid admin password."
+            error="Invalid password."
+        )
+
+
+    if session.get("admin_logged_in"):
+
+        return redirect(
+            url_for("admin_panel")
         )
 
 
@@ -1684,7 +1742,108 @@ def admin():
 # ADMIN PANEL
 # ============================================================
 
-ADMIN_PANEL_HTML = r"""
+@app.route("/admin/panel", methods=["GET"])
+@admin_required
+def admin_panel():
+
+    cleanup_requests()
+
+    requests_list = []
+
+    for request_id, data in PENDING_REQUESTS.items():
+
+        requests_list.append({
+            "id": request_id,
+            "key": data.get("key", ""),
+            "approved": data.get("approved", False),
+            "created": data.get("created", 0)
+        })
+
+
+    requests_list.sort(
+        key=lambda item: item["created"],
+        reverse=True
+    )
+
+
+    rows = ""
+
+
+    for item in requests_list:
+
+        created_time = time.strftime(
+            "%Y-%m-%d %H:%M:%S",
+            time.localtime(item["created"])
+        )
+
+
+        if item["approved"]:
+
+            status_html = """
+                <span class="approved">
+                    APPROVED
+                </span>
+            """
+
+        else:
+
+            status_html = """
+                <span class="pending">
+                    PENDING
+                </span>
+            """
+
+
+        if item["approved"]:
+
+            action_html = """
+                <span class="done">
+                    ACCESS GRANTED
+                </span>
+            """
+
+        else:
+
+            action_html = f"""
+                <form
+                    method="POST"
+                    action="/admin/approve/{item['id']}"
+                >
+                    <button class="approve">
+                        APPROVE
+                    </button>
+                </form>
+            """
+
+
+        rows += f"""
+            <tr>
+
+                <td>
+                    <code>{item['id']}</code>
+                </td>
+
+                <td>
+                    <code>{item['key']}</code>
+                </td>
+
+                <td>
+                    {status_html}
+                </td>
+
+                <td>
+                    {created_time}
+                </td>
+
+                <td>
+                    {action_html}
+                </td>
+
+            </tr>
+        """
+
+
+    admin_html = f"""
 <!DOCTYPE html>
 <html lang="en">
 
@@ -1701,178 +1860,203 @@ ADMIN_PANEL_HTML = r"""
 
     <style>
 
-        * {
+        * {{
             box-sizing: border-box;
-        }
+        }}
 
-        body {
+        body {{
+
             margin: 0;
+
             min-height: 100vh;
 
-            background: #080706;
-            color: #f0ece8;
+            background: #080808;
+            color: #eee;
 
             font-family:
                 Inter,
                 -apple-system,
                 BlinkMacSystemFont,
                 "Segoe UI",
-                Arial,
                 sans-serif;
-        }
 
-        .page {
-            width: 100%;
-            max-width: 1050px;
+        }}
 
-            margin: 0 auto;
+        .container {{
 
-            padding: 30px 18px 60px;
-        }
+            width: min(1250px, calc(100% - 30px));
 
-        .header {
+            margin: auto;
+
+            padding: 40px 0 60px;
+
+        }}
+
+        .top {{
+
             display: flex;
+
+            align-items: center;
+
             justify-content: space-between;
-            align-items: center;
 
-            gap: 20px;
+            margin-bottom: 25px;
 
-            padding-bottom: 22px;
+        }}
 
-            border-bottom: 1px solid #292521;
-        }
+        h1 {{
 
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .mark {
-            width: 9px;
-            height: 25px;
-
-            background: #ff4b00;
-
-            transform: skewX(-18deg);
-        }
-
-        h1 {
             margin: 0;
 
-            font-size: 23px;
-            font-weight: 900;
-        }
+            font-size: 32px;
 
-        .logout {
-            color: #77716b;
+        }}
 
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
+        .subtitle {{
 
-        .logout:hover {
-            color: #ff4b00;
-        }
+            margin-top: 5px;
 
-        .request {
-            margin-top: 12px;
+            color: #666;
 
-            border: 1px solid #292521;
+            font-size: 13px;
 
-            background: #0d0c0b;
+        }}
 
-            padding: 18px;
-        }
+        .logout {{
 
-        .request.pending {
-            border-left: 3px solid #ff4b00;
-        }
+            color: #999;
 
-        .request.approved {
-            border-left: 3px solid #67513f;
-        }
+            text-decoration: none;
 
-        .request-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-
-            gap: 20px;
-        }
-
-        .request-id {
-            color: #ff6a22;
-
-            font-family: monospace;
             font-size: 12px;
 
-            word-break: break-all;
-        }
+            border: 1px solid #292929;
 
-        .badge {
-            padding: 6px 9px;
+            padding: 10px 15px;
 
-            background: #171310;
+        }}
 
-            color: #ff7b3c;
+        .logout:hover {{
 
-            font-size: 9px;
-            font-weight: 900;
-            letter-spacing: 0.1em;
+            color: #fff;
+
+            border-color: #444;
+
+        }}
+
+        .table-wrap {{
+
+            overflow-x: auto;
+
+            border: 1px solid #292929;
+
+        }}
+
+        table {{
+
+            width: 100%;
+
+            border-collapse: collapse;
+
+            min-width: 900px;
+
+        }}
+
+        th {{
+
+            text-align: left;
+
+            padding: 15px;
+
+            color: #666;
+
+            background: #101010;
+
+            font-size: 10px;
+
             text-transform: uppercase;
-        }
 
-        .info {
-            margin-top: 13px;
+            letter-spacing: 0.1em;
 
-            color: #77716b;
+        }}
 
-            font-family: monospace;
-            font-size: 11px;
+        td {{
 
-            line-height: 1.7;
-        }
+            padding: 15px;
 
-        .approve {
-            display: inline-block;
+            border-top: 1px solid #202020;
 
-            margin-top: 14px;
+            font-size: 12px;
 
-            border: 0;
+            background: #0d0d0d;
 
-            padding: 10px 13px;
+        }}
 
-            background: #ff4b00;
-            color: #080706;
+        code {{
+
+            color: #bbb;
+
+        }}
+
+        .approved {{
+
+            color: #39d98a;
+
+            font-weight: 800;
+
+        }}
+
+        .pending {{
+
+            color: #ff7a4d;
+
+            font-weight: 800;
+
+        }}
+
+        .done {{
+
+            color: #555;
+
+            font-size: 10px;
+
+            font-weight: 800;
+
+        }}
+
+        .approve {{
+
+            border: 1px solid #ff4a00;
+
+            background: #ff4a00;
+
+            color: white;
+
+            padding: 9px 14px;
+
+            font-size: 10px;
+
+            font-weight: 800;
 
             cursor: pointer;
 
-            font-size: 10px;
-            font-weight: 900;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-        }
+        }}
 
-        .approve:hover {
-            background: #ff5c16;
-        }
+        .approve:hover {{
 
-        .empty {
-            margin-top: 30px;
+            background: #ff5d16;
 
-            padding: 30px;
+        }}
 
-            border: 1px solid #292521;
+        .empty {{
 
-            color: #77716b;
+            padding: 40px;
 
             text-align: center;
 
-            font-size: 12px;
-        }
+            color: #666;
+
+        }}
 
     </style>
 
@@ -1880,109 +2064,81 @@ ADMIN_PANEL_HTML = r"""
 
 <body>
 
-<div class="page">
+    <div class="container">
 
-    <header class="header">
+        <div class="top">
 
-        <div class="brand">
+            <div>
 
-            <div class="mark"></div>
+                <h1>
+                    GENGA Admin
+                </h1>
 
-            <h1>
-                GENGA ADMIN
-            </h1>
-
-        </div>
-
-        <a
-            class="logout"
-            href="{{ url_for('admin_logout') }}"
-        >
-            Logout
-        </a>
-
-    </header>
-
-
-    {% if requests %}
-
-        {% for request_id, data in requests %}
-
-            <div
-                class="request
-                {% if data.approved %}
-                    approved
-                {% else %}
-                    pending
-                {% endif %}"
-            >
-
-                <div class="request-top">
-
-                    <div class="request-id">
-                        {{ request_id }}
-                    </div>
-
-                    <div class="badge">
-
-                        {% if data.approved %}
-                            Approved
-                        {% else %}
-                            Pending
-                        {% endif %}
-
-                    </div>
-
+                <div class="subtitle">
+                    Download request management
                 </div>
-
-
-                <div class="info">
-
-                    KEY:
-                    {{ data.key }}
-
-                    <br>
-
-                    CREATED:
-                    {{ data.created }}
-
-                </div>
-
-
-                {% if not data.approved %}
-
-                    <form
-                        method="POST"
-                        action="{{ url_for(
-                            'approve_request',
-                            request_id=request_id
-                        ) }}"
-                    >
-
-                        <button
-                            class="approve"
-                            type="submit"
-                        >
-                            Approve Request
-                        </button>
-
-                    </form>
-
-                {% endif %}
 
             </div>
 
-        {% endfor %}
+            <a
+                class="logout"
+                href="/admin/logout"
+            >
+                Logout
+            </a>
 
-    {% else %}
-
-        <div class="empty">
-            No download requests.
         </div>
 
-    {% endif %}
 
-</div>
+        <div class="table-wrap">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            Request ID
+                        </th>
+
+                        <th>
+                            Key
+                        </th>
+
+                        <th>
+                            Status
+                        </th>
+
+                        <th>
+                            Created
+                        </th>
+
+                        <th>
+                            Action
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {rows if rows else '''
+                        <tr>
+                            <td colspan="5" class="empty">
+                                No download requests yet.
+                            </td>
+                        </tr>
+                    '''}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
 
 </body>
 
@@ -1990,22 +2146,7 @@ ADMIN_PANEL_HTML = r"""
 """
 
 
-@app.route("/admin/panel", methods=["GET"])
-@admin_required
-def admin_panel():
-
-    requests_list = list(
-        PENDING_REQUESTS.items()
-    )
-
-    # Newest requests first
-    requests_list.reverse()
-
-
-    return render_template_string(
-        ADMIN_PANEL_HTML,
-        requests=requests_list
-    )
+    return admin_html
 
 
 # ============================================================
@@ -2022,14 +2163,14 @@ def approve_request(request_id):
     request_data = PENDING_REQUESTS.get(request_id)
 
 
-    if not request_data:
+    if request_data:
 
-        return redirect(
-            url_for("admin_panel")
+        request_data["approved"] = True
+
+        print(
+            "Approved request:",
+            request_id
         )
-
-
-    request_data["approved"] = True
 
 
     return redirect(
@@ -2044,10 +2185,7 @@ def approve_request(request_id):
 @app.route("/admin/logout")
 def admin_logout():
 
-    session.pop(
-        "admin_logged_in",
-        None
-    )
+    session.clear()
 
     return redirect(
         url_for("admin")
@@ -2069,17 +2207,22 @@ def download(request_id):
 
     if not request_data:
 
-        return (
-            "Download request not found.",
-            404
+        return redirect(
+            url_for(
+                "index",
+                error="expired"
+            )
         )
 
 
-    if not request_data.get("approved"):
+    if request_data.get("approved") is not True:
 
-        return (
-            "This download request has not been approved.",
-            403
+        return redirect(
+            url_for(
+                "index",
+                request=request_id,
+                error="notapproved"
+            )
         )
 
 
@@ -2094,7 +2237,7 @@ def download(request_id):
     if not os.path.isfile(file_path):
 
         return (
-            "Download file is currently unavailable.",
+            "Download file not found on server.",
             404
         )
 
@@ -2107,50 +2250,20 @@ def download(request_id):
 
 
 # ============================================================
-# CLEAN OLD REQUESTS
+# HEALTH CHECK
 # ============================================================
 
-def cleanup_old_requests():
+@app.route("/health")
+def health():
 
-    current_time = time.time()
-
-    expired = []
-
-
-    for request_id, data in PENDING_REQUESTS.items():
-
-        created = data.get(
-            "created",
-            current_time
-        )
-
-
-        # Remove requests older than 24 hours.
-        if current_time - created > 86400:
-
-            expired.append(request_id)
-
-
-    for request_id in expired:
-
-        PENDING_REQUESTS.pop(
-            request_id,
-            None
-        )
+    return jsonify({
+        "status": "ok",
+        "service": "GENGA Client"
+    })
 
 
 # ============================================================
-# BEFORE REQUEST
-# ============================================================
-
-@app.before_request
-def before_request():
-
-    cleanup_old_requests()
-
-
-# ============================================================
-# START SERVER
+# RUN
 # ============================================================
 
 if __name__ == "__main__":
@@ -2164,6 +2277,5 @@ if __name__ == "__main__":
 
     app.run(
         host="0.0.0.0",
-        port=port,
-        debug=False
+        port=port
     )
