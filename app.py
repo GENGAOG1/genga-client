@@ -127,23 +127,21 @@ HTML = """
     padding: 0;
 }
 
+
 html {
     scroll-behavior: smooth;
 }
 
-
-/* ============================================================
-   BODY
-   ============================================================ */
 
 body {
 
     min-height: 100vh;
 
     background:
-        #08080b;
+        #070707;
 
-    color: #eeeeef;
+    color:
+        #eeeeee;
 
     font-family:
         Inter,
@@ -153,14 +151,16 @@ body {
         Arial,
         sans-serif;
 
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing:
+        antialiased;
 
-    overflow-x: hidden;
+    overflow-x:
+        hidden;
 }
 
 
 /* ============================================================
-   BACKGROUND GRID
+   SUBTLE BACKGROUND
    ============================================================ */
 
 body::before {
@@ -173,7 +173,7 @@ body::before {
 
     pointer-events: none;
 
-    background:
+    background-image:
 
         linear-gradient(
             rgba(255,255,255,0.018) 1px,
@@ -187,21 +187,22 @@ body::before {
         );
 
     background-size:
-        42px 42px;
+        45px 45px;
 
     mask-image:
         linear-gradient(
             to bottom,
             black,
-            transparent 80%
+            transparent 85%
         );
 
-    opacity: 0.5;
+    opacity:
+        0.35;
 }
 
 
 /* ============================================================
-   TOP PURPLE GLOW
+   SUBTLE RED / ORANGE LIGHT
    ============================================================ */
 
 body::after {
@@ -210,22 +211,29 @@ body::after {
 
     position: fixed;
 
-    width: 500px;
-    height: 500px;
+    width:
+        450px;
 
-    top: -280px;
-    left: 50%;
+    height:
+        450px;
+
+    top:
+        -300px;
+
+    left:
+        50%;
 
     transform:
         translateX(-50%);
 
     background:
-        rgba(124,58,237,0.09);
+        rgba(255,70,20,0.07);
 
     filter:
         blur(120px);
 
-    pointer-events: none;
+    pointer-events:
+        none;
 }
 
 
@@ -235,42 +243,52 @@ body::after {
 
 header {
 
-    width: 100%;
+    width:
+        100%;
 
-    height: 70px;
+    height:
+        68px;
 
     border-bottom:
         1px solid
         rgba(255,255,255,0.07);
 
     background:
-        rgba(8,8,11,0.82);
+        rgba(7,7,7,0.92);
 
     backdrop-filter:
         blur(18px);
 
-    position: relative;
+    position:
+        relative;
 
-    z-index: 10;
+    z-index:
+        10;
 }
 
 
 .header-inner {
 
-    max-width: 1120px;
+    max-width:
+        1120px;
 
-    height: 100%;
+    height:
+        100%;
 
-    margin: auto;
+    margin:
+        auto;
 
     padding:
         0 24px;
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    justify-content: space-between;
+    justify-content:
+        space-between;
 }
 
 
@@ -280,91 +298,120 @@ header {
 
 .logo {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 11px;
+    gap:
+        11px;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 15px;
+    font-size:
+        15px;
 
-    font-weight: 800;
+    font-weight:
+        900;
 
-    letter-spacing: 3px;
+    letter-spacing:
+        3px;
 }
 
 
 .logo-mark {
 
-    width: 28px;
-    height: 28px;
+    width:
+        28px;
 
-    display: flex;
+    height:
+        28px;
 
-    align-items: center;
-    justify-content: center;
+    display:
+        flex;
 
-    border-radius: 7px;
+    align-items:
+        center;
+
+    justify-content:
+        center;
+
+    border-radius:
+        6px;
 
     background:
-        #8b5cf6;
+        #ff3b16;
 
-    color: #ffffff;
+    color:
+        #ffffff;
 
-    font-size: 12px;
+    font-size:
+        11px;
 
-    font-weight: 900;
+    font-weight:
+        950;
 
     box-shadow:
-        0 0 0 1px
-        rgba(255,255,255,0.08);
+        0 0 18px
+        rgba(255,59,22,0.18);
 }
 
 
 .logo span {
 
     color:
-        #a78bfa;
+        #ff4d22;
 }
 
 
 /* ============================================================
-   HEADER STATUS
+   STATUS
    ============================================================ */
 
 .status {
 
-    display: flex;
+    display:
+        flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 8px;
+    gap:
+        8px;
 
-    color: #77777f;
+    color:
+        #686868;
 
-    font-size: 10px;
+    font-size:
+        9px;
 
-    font-weight: 700;
+    font-weight:
+        800;
 
-    letter-spacing: 1.5px;
+    letter-spacing:
+        1.5px;
 }
 
 
 .status-dot {
 
-    width: 6px;
-    height: 6px;
+    width:
+        6px;
 
-    border-radius: 50%;
+    height:
+        6px;
+
+    border-radius:
+        50%;
 
     background:
-        #4ade80;
+        #ff5a24;
 
     box-shadow:
         0 0 8px
-        rgba(74,222,128,0.65);
+        rgba(255,90,36,0.6);
 }
 
 
@@ -374,22 +421,27 @@ header {
 
 main {
 
-    position: relative;
+    position:
+        relative;
 
-    z-index: 2;
+    z-index:
+        2;
 
-    width: 100%;
+    width:
+        100%;
 }
 
 
 .hero {
 
-    max-width: 1120px;
+    max-width:
+        1120px;
 
-    margin: auto;
+    margin:
+        auto;
 
     padding:
-        110px 24px 90px;
+        105px 24px 85px;
 }
 
 
@@ -399,25 +451,31 @@ main {
 
 .hero-content {
 
-    max-width: 760px;
+    max-width:
+        760px;
 
-    margin: auto;
+    margin:
+        auto;
 
-    text-align: center;
+    text-align:
+        center;
 }
 
 
 /* ============================================================
-   VERSION BADGE
+   VERSION
    ============================================================ */
 
 .version {
 
-    display: inline-flex;
+    display:
+        inline-flex;
 
-    align-items: center;
+    align-items:
+        center;
 
-    gap: 8px;
+    gap:
+        8px;
 
     padding:
         6px 10px;
@@ -427,21 +485,25 @@ main {
 
     border:
         1px solid
-        rgba(139,92,246,0.22);
+        rgba(255,70,20,0.22);
 
-    border-radius: 6px;
+    border-radius:
+        5px;
 
     background:
-        rgba(139,92,246,0.06);
+        rgba(255,70,20,0.045);
 
     color:
-        #a78bfa;
+        #ff7048;
 
-    font-size: 10px;
+    font-size:
+        9px;
 
-    font-weight: 700;
+    font-weight:
+        800;
 
-    letter-spacing: 1.3px;
+    letter-spacing:
+        1.4px;
 
     text-transform:
         uppercase;
@@ -450,13 +512,21 @@ main {
 
 .version-dot {
 
-    width: 5px;
-    height: 5px;
+    width:
+        5px;
 
-    border-radius: 50%;
+    height:
+        5px;
+
+    border-radius:
+        50%;
 
     background:
-        #8b5cf6;
+        #ff4d22;
+
+    box-shadow:
+        0 0 7px
+        rgba(255,77,34,0.7);
 }
 
 
@@ -467,29 +537,29 @@ main {
 h1 {
 
     font-size:
-        clamp(52px, 9vw, 92px);
+        clamp(55px, 9vw, 95px);
 
     line-height:
-        0.95;
+        0.9;
 
     font-weight:
-        900;
+        950;
 
     letter-spacing:
         -5px;
 
     color:
-        #f5f5f5;
+        #f2f2f2;
 
     margin-bottom:
-        24px;
+        23px;
 }
 
 
 h1 span {
 
     color:
-        #8b5cf6;
+        #ff4b21;
 }
 
 
@@ -506,10 +576,10 @@ h1 span {
         auto;
 
     color:
-        #85858e;
+        #77777b;
 
     font-size:
-        15px;
+        14px;
 
     line-height:
         1.7;
@@ -517,7 +587,7 @@ h1 span {
 
 
 /* ============================================================
-   ACTION BUTTONS
+   ACTIONS
    ============================================================ */
 
 .actions {
@@ -529,10 +599,10 @@ h1 span {
         center;
 
     gap:
-        10px;
+        9px;
 
     margin-top:
-        34px;
+        32px;
 
     flex-wrap:
         wrap;
@@ -542,7 +612,7 @@ h1 span {
 .button {
 
     height:
-        43px;
+        42px;
 
     padding:
         0 18px;
@@ -557,57 +627,69 @@ h1 span {
         center;
 
     border-radius:
-        8px;
+        7px;
 
     text-decoration:
         none;
 
     font-size:
-        12px;
+        11px;
 
     font-weight:
-        750;
+        850;
 
     transition:
         0.18s ease;
 }
 
 
+/* ============================================================
+   PRIMARY
+   ============================================================ */
+
 .primary {
 
     background:
-        #8b5cf6;
+        #ff461d;
 
     color:
         white;
 
     box-shadow:
-        0 5px 20px
-        rgba(139,92,246,0.16);
+        0 6px 22px
+        rgba(255,70,29,0.14);
 }
 
 
 .primary:hover {
 
     background:
-        #7c3aed;
+        #ff5728;
 
     transform:
         translateY(-1px);
+
+    box-shadow:
+        0 8px 28px
+        rgba(255,70,29,0.22);
 }
 
+
+/* ============================================================
+   SECONDARY
+   ============================================================ */
 
 .secondary {
 
     color:
-        #b5b5bd;
+        #a5a5a9;
 
     background:
-        rgba(255,255,255,0.035);
+        rgba(255,255,255,0.025);
 
     border:
         1px solid
-        rgba(255,255,255,0.09);
+        rgba(255,255,255,0.08);
 }
 
 
@@ -616,11 +698,11 @@ h1 span {
     color:
         white;
 
-    border-color:
-        rgba(255,255,255,0.16);
-
     background:
-        rgba(255,255,255,0.055);
+        rgba(255,255,255,0.045);
+
+    border-color:
+        rgba(255,255,255,0.15);
 }
 
 
@@ -644,19 +726,23 @@ h1 span {
 
     border:
         1px solid
-        rgba(255,255,255,0.08);
+        rgba(255,255,255,0.075);
 
     border-radius:
-        12px;
+        10px;
 
     background:
-        #0e0e13;
+        #0d0d0f;
 
     box-shadow:
-        0 18px 60px
-        rgba(0,0,0,0.22);
+        0 20px 60px
+        rgba(0,0,0,0.25);
 }
 
+
+/* ============================================================
+   PANEL HEADER
+   ============================================================ */
 
 .panel-header {
 
@@ -695,17 +781,20 @@ h1 span {
         6px;
 
     background:
-        rgba(139,92,246,0.1);
+        rgba(255,70,20,0.08);
 
     border:
         1px solid
-        rgba(139,92,246,0.18);
+        rgba(255,70,20,0.15);
 
     color:
-        #a78bfa;
+        #ff633b;
 
     font-size:
-        12px;
+        11px;
+
+    font-weight:
+        900;
 }
 
 
@@ -715,10 +804,10 @@ h1 span {
         13px;
 
     font-weight:
-        750;
+        800;
 
     color:
-        #eeeeef;
+        #e7e7e8;
 }
 
 
@@ -728,7 +817,7 @@ h1 span {
         18px;
 
     color:
-        #707079;
+        #68686e;
 
     font-size:
         11px;
@@ -739,7 +828,7 @@ h1 span {
 
 
 /* ============================================================
-   KEY INPUT
+   INPUT
    ============================================================ */
 
 .key-input {
@@ -755,7 +844,7 @@ h1 span {
 
     border:
         1px solid
-        rgba(255,255,255,0.09);
+        rgba(255,255,255,0.08);
 
     border-radius:
         7px;
@@ -764,7 +853,7 @@ h1 span {
         none;
 
     background:
-        #08080b;
+        #070707;
 
     color:
         white;
@@ -775,29 +864,36 @@ h1 span {
         monospace;
 
     font-size:
-        12px;
+        11px;
 
     transition:
-        border-color 0.18s ease;
+        border-color
+        0.18s ease,
+        box-shadow
+        0.18s ease;
 }
 
 
 .key-input::placeholder {
 
     color:
-        #4f4f57;
+        #454549;
 }
 
 
 .key-input:focus {
 
     border-color:
-        rgba(139,92,246,0.6);
+        rgba(255,70,20,0.55);
+
+    box-shadow:
+        0 0 0 2px
+        rgba(255,70,20,0.06);
 }
 
 
 /* ============================================================
-   KEY BUTTON
+   KEY SUBMIT
    ============================================================ */
 
 .key-submit {
@@ -818,7 +914,7 @@ h1 span {
         7px;
 
     background:
-        #8b5cf6;
+        #ff461d;
 
     color:
         white;
@@ -827,7 +923,7 @@ h1 span {
         11px;
 
     font-weight:
-        800;
+        850;
 
     cursor:
         pointer;
@@ -840,7 +936,7 @@ h1 span {
 .key-submit:hover {
 
     background:
-        #7c3aed;
+        #ff5728;
 }
 
 
@@ -863,14 +959,18 @@ h1 span {
         1px solid
         rgba(255,255,255,0.07);
 
+    border-left:
+        2px solid
+        #ff4b21;
+
     border-radius:
-        8px;
+        7px;
 
     background:
-        #0e0e13;
+        #0d0d0f;
 
     color:
-        #8e8e97;
+        #8a8a90;
 
     font-size:
         11px;
@@ -900,16 +1000,17 @@ h1 span {
 
     border:
         1px solid
-        rgba(74,222,128,0.14);
+        rgba(255,77,34,0.2);
 
     border-radius:
-        12px;
+        10px;
 
     background:
-        #0d100f;
+        #0e0d0c;
 
-    text-align:
-        left;
+    box-shadow:
+        0 18px 60px
+        rgba(0,0,0,0.25);
 }
 
 
@@ -928,13 +1029,13 @@ h1 span {
         8px;
 
     color:
-        #86efac;
+        #ff714c;
 
     font-size:
         13px;
 
     font-weight:
-        800;
+        850;
 }
 
 
@@ -959,7 +1060,14 @@ h1 span {
         6px;
 
     background:
-        rgba(74,222,128,0.1);
+        rgba(255,70,20,0.1);
+
+    border:
+        1px solid
+        rgba(255,70,20,0.15);
+
+    color:
+        #ff5b2c;
 
     font-size:
         12px;
@@ -972,7 +1080,7 @@ h1 span {
         17px;
 
     color:
-        #727a75;
+        #74716f;
 
     font-size:
         11px;
@@ -1003,10 +1111,10 @@ h1 span {
         7px;
 
     background:
-        #4ade80;
+        #ff461d;
 
     color:
-        #06130a;
+        white;
 
     text-decoration:
         none;
@@ -1019,16 +1127,24 @@ h1 span {
 
     transition:
         0.18s ease;
+
+    box-shadow:
+        0 6px 22px
+        rgba(255,70,29,0.12);
 }
 
 
 .download-button:hover {
 
     background:
-        #22c55e;
+        #ff5728;
 
     transform:
         translateY(-1px);
+
+    box-shadow:
+        0 8px 28px
+        rgba(255,70,29,0.2);
 }
 
 
@@ -1049,16 +1165,16 @@ h1 span {
 .section-label {
 
     margin-bottom:
-        14px;
+        13px;
 
     color:
-        #56565e;
+        #4f4f53;
 
     font-size:
         9px;
 
     font-weight:
-        800;
+        850;
 
     letter-spacing:
         2px;
@@ -1091,26 +1207,26 @@ h1 span {
 
     border:
         1px solid
-        rgba(255,255,255,0.065);
+        rgba(255,255,255,0.06);
 
     border-radius:
-        10px;
+        9px;
 
     background:
-        rgba(255,255,255,0.018);
+        rgba(255,255,255,0.016);
 
     transition:
-        0.2s ease;
+        0.18s ease;
 }
 
 
 .card:hover {
 
     background:
-        rgba(255,255,255,0.028);
+        rgba(255,255,255,0.025);
 
     border-color:
-        rgba(255,255,255,0.11);
+        rgba(255,70,20,0.13);
 
     transform:
         translateY(-2px);
@@ -1141,14 +1257,14 @@ h1 span {
         7px;
 
     background:
-        rgba(139,92,246,0.08);
+        rgba(255,70,20,0.065);
 
     border:
         1px solid
-        rgba(139,92,246,0.12);
+        rgba(255,70,20,0.11);
 
     color:
-        #a78bfa;
+        #ff653d;
 
     font-size:
         13px;
@@ -1167,14 +1283,14 @@ h1 span {
         12px;
 
     font-weight:
-        750;
+        800;
 }
 
 
 .card p {
 
     color:
-        #696970;
+        #65656b;
 
     font-size:
         11px;
@@ -1191,13 +1307,13 @@ h1 span {
 .discord-icon {
 
     color:
-        #7289da;
+        #ff7350;
 
     background:
-        rgba(114,137,218,0.08);
+        rgba(255,70,20,0.065);
 
     border-color:
-        rgba(114,137,218,0.14);
+        rgba(255,70,20,0.11);
 }
 
 
@@ -1219,14 +1335,14 @@ h1 span {
         6px;
 
     background:
-        rgba(114,137,218,0.09);
+        rgba(255,70,20,0.065);
 
     border:
         1px solid
-        rgba(114,137,218,0.16);
+        rgba(255,70,20,0.13);
 
     color:
-        #9baeea;
+        #ff7654;
 
     text-decoration:
         none;
@@ -1235,7 +1351,7 @@ h1 span {
         10px;
 
     font-weight:
-        750;
+        800;
 
     transition:
         0.18s ease;
@@ -1245,10 +1361,10 @@ h1 span {
 .discord-button:hover {
 
     background:
-        rgba(114,137,218,0.16);
+        rgba(255,70,20,0.12);
 
     color:
-        white;
+        #ff9a7e;
 }
 
 
@@ -1275,10 +1391,10 @@ footer {
 
     border-top:
         1px solid
-        rgba(255,255,255,0.055);
+        rgba(255,255,255,0.05);
 
     color:
-        #45454d;
+        #414145;
 
     font-size:
         10px;
@@ -1376,13 +1492,17 @@ footer {
 
     <div class="header-inner">
 
+
         <div class="logo">
+
 
             <div class="logo-mark">
                 G
             </div>
 
+
             GEN<span>GA</span>
+
 
         </div>
 
@@ -1395,6 +1515,7 @@ footer {
 
         </div>
 
+
     </div>
 
 </header>
@@ -1405,6 +1526,7 @@ footer {
      ========================================================== -->
 
 <main>
+
 
 <section class="hero">
 
@@ -1481,7 +1603,7 @@ footer {
 
 
     <!-- ======================================================
-         DOWNLOAD READY
+         DOWNLOAD / KEY
          ====================================================== -->
 
     {% if download_ready %}
@@ -1492,11 +1614,14 @@ footer {
 
         <div class="download-title">
 
+
             <div class="download-check">
                 ✓
             </div>
 
+
             Key verified
+
 
         </div>
 
@@ -1524,10 +1649,6 @@ footer {
 
     {% else %}
 
-
-    <!-- ======================================================
-         KEY PANEL
-         ====================================================== -->
 
     <div
         class="key-panel"
@@ -1605,16 +1726,14 @@ footer {
 
 
         <div class="section-label">
+
             Client
+
         </div>
 
 
         <div class="features">
 
-
-            <!-- ==================================================
-                 FEATURE 1
-                 ================================================== -->
 
             <div class="card">
 
@@ -1640,10 +1759,6 @@ footer {
             </div>
 
 
-            <!-- ==================================================
-                 FEATURE 2
-                 ================================================== -->
-
             <div class="card">
 
 
@@ -1667,10 +1782,6 @@ footer {
 
             </div>
 
-
-            <!-- ==================================================
-                 FEATURE 3
-                 ================================================== -->
 
             <div class="card discord-card">
 
@@ -1739,11 +1850,39 @@ footer {
 const requestId =
     "{{ request_id or '' }}";
 
+const downloadReady =
+    {{ "true" if download_ready else "false" }};
 
-if (requestId) {
+
+/*
+ * WICHTIG:
+ *
+ * Solange der Request noch nicht bestätigt wurde,
+ * prüfen wir alle 2 Sekunden den Status.
+ *
+ * Sobald "approved" zurückkommt, wird die Seite
+ * GENAU EINMAL neu geladen.
+ *
+ * Nach dem Reload ist downloadReady = true.
+ * Dadurch wird dieses Script nicht mehr ausgeführt.
+ */
+
+if (
+    requestId &&
+    !downloadReady
+) {
+
+    let alreadyReloaded = false;
 
 
     const checkStatus = async () => {
+
+
+        if (alreadyReloaded) {
+
+            return;
+
+        }
 
 
         try {
@@ -1754,7 +1893,8 @@ if (requestId) {
                     "/status/" +
                     encodeURIComponent(requestId),
                     {
-                        cache: "no-store"
+                        cache:
+                            "no-store"
                     }
                 );
 
@@ -1775,6 +1915,27 @@ if (requestId) {
             ) {
 
 
+                /*
+                 * Verhindert mehrfaches Reloaden.
+                 */
+
+                alreadyReloaded =
+                    true;
+
+
+                /*
+                 * Intervall stoppen.
+                 */
+
+                clearInterval(
+                    statusInterval
+                );
+
+
+                /*
+                 * Einmaliger Reload.
+                 */
+
                 window.location.reload();
 
 
@@ -1792,18 +1953,25 @@ if (requestId) {
 
         }
 
-
     };
 
+
+    /*
+     * Sofort einmal prüfen.
+     */
 
     checkStatus();
 
 
-    setInterval(
-        checkStatus,
-        2000
-    );
+    /*
+     * Danach alle 2 Sekunden.
+     */
 
+    const statusInterval =
+        setInterval(
+            checkStatus,
+            2000
+        );
 
 }
 
@@ -1901,7 +2069,8 @@ def request_download():
 
             request_id=None,
 
-            message="❌ Bitte gib einen Key ein."
+            message=
+                "❌ Bitte gib einen Key ein."
 
         )
 
@@ -1922,7 +2091,8 @@ def request_download():
 
             request_id=None,
 
-            message="❌ Dieser Key ist ungültig."
+            message=
+                "❌ Dieser Key ist ungültig."
 
         )
 
@@ -1936,11 +2106,14 @@ def request_download():
 
     PENDING_REQUESTS[request_id] = {
 
-        "key": entered_key,
+        "key":
+            entered_key,
 
-        "approved": False,
+        "approved":
+            False,
 
-        "created": time.time()
+        "created":
+            time.time()
 
     }
 
@@ -1952,6 +2125,7 @@ def request_download():
     if DISCORD_WEBHOOK_URL:
 
         try:
+
 
             payload = {
 
@@ -2031,24 +2205,35 @@ def request_download():
 
 
             print(
+
                 "Discord Webhook Status:",
+
                 response.status_code
+
             )
 
 
         except Exception as error:
 
+
             print(
+
                 "Discord Webhook Fehler:",
+
                 error
+
             )
 
 
     else:
 
+
         print(
+
             "WARNUNG: "
-            "DISCORD_WEBHOOK_URL ist nicht gesetzt."
+            "DISCORD_WEBHOOK_URL "
+            "ist nicht gesetzt."
+
         )
 
 
@@ -2179,13 +2364,16 @@ def admin_login():
                     content="width=device-width, initial-scale=1.0"
                 >
 
-                <title>GENGA Admin</title>
+                <title>
+                    GENGA Admin
+                </title>
 
 
                 <style>
 
                     * {
-                        box-sizing:border-box;
+                        box-sizing:
+                            border-box;
                     }
 
 
@@ -2201,7 +2389,7 @@ def admin_login():
 
                         justify-content:center;
 
-                        background:#08080b;
+                        background:#070707;
 
                         color:white;
 
@@ -2213,17 +2401,13 @@ def admin_login():
 
                     .box {
 
-                        width:
-                            350px;
+                        width:350px;
 
-                        padding:
-                            30px;
+                        padding:30px;
 
-                        border-radius:
-                            12px;
+                        border-radius:11px;
 
-                        background:
-                            #0e0e13;
+                        background:#0d0d0f;
 
                         border:
                             1px solid
@@ -2231,26 +2415,21 @@ def admin_login():
 
                         box-shadow:
                             0 20px 70px
-                            rgba(0,0,0,.3);
+                            rgba(0,0,0,.35);
                     }
 
 
                     .brand {
 
-                        color:
-                            #a78bfa;
+                        color:#ff5a2b;
 
-                        font-size:
-                            10px;
+                        font-size:10px;
 
-                        font-weight:
-                            800;
+                        font-weight:900;
 
-                        letter-spacing:
-                            2px;
+                        letter-spacing:2px;
 
-                        margin-bottom:
-                            10px;
+                        margin-bottom:10px;
                     }
 
 
@@ -2259,121 +2438,96 @@ def admin_login():
                         margin:
                             0 0 7px;
 
-                        font-size:
-                            22px;
+                        font-size:22px;
                     }
 
 
                     .description {
 
-                        color:
-                            #6f6f78;
+                        color:#69696f;
 
-                        font-size:
-                            12px;
+                        font-size:12px;
 
-                        line-height:
-                            1.6;
+                        line-height:1.6;
                     }
 
 
                     .error {
 
-                        margin-top:
-                            16px;
+                        margin-top:16px;
 
-                        padding:
-                            10px;
+                        padding:10px;
 
-                        border-radius:
-                            7px;
+                        border-radius:7px;
 
                         background:
-                            rgba(248,113,113,.06);
+                            rgba(255,70,20,.06);
 
                         border:
                             1px solid
-                            rgba(248,113,113,.12);
+                            rgba(255,70,20,.14);
 
-                        color:
-                            #f87171;
+                        color:#ff7553;
 
-                        font-size:
-                            11px;
+                        font-size:11px;
                     }
 
 
                     input {
 
-                        width:
-                            100%;
+                        width:100%;
 
-                        height:
-                            42px;
+                        height:42px;
 
-                        padding:
-                            0 12px;
+                        padding:0 12px;
 
                         margin:
                             18px 0 9px;
 
-                        border-radius:
-                            7px;
+                        border-radius:7px;
 
                         border:
                             1px solid
-                            rgba(255,255,255,.09);
+                            rgba(255,255,255,.08);
 
-                        background:
-                            #08080b;
+                        background:#070707;
 
-                        color:
-                            white;
+                        color:white;
 
-                        outline:
-                            none;
+                        outline:none;
                     }
 
 
                     input:focus {
 
                         border-color:
-                            rgba(139,92,246,.6);
+                            rgba(255,70,20,.55);
                     }
 
 
                     button {
 
-                        width:
-                            100%;
+                        width:100%;
 
-                        height:
-                            41px;
+                        height:41px;
 
-                        border:
-                            0;
+                        border:0;
 
-                        border-radius:
-                            7px;
+                        border-radius:7px;
 
-                        background:
-                            #8b5cf6;
+                        background:#ff461d;
 
-                        color:
-                            white;
+                        color:white;
 
-                        font-weight:
-                            800;
+                        font-weight:850;
 
-                        cursor:
-                            pointer;
+                        cursor:pointer;
                     }
 
 
                     button:hover {
 
-                        background:
-                            #7c3aed;
+                        background:#ff5728;
                     }
 
                 </style>
@@ -2398,13 +2552,17 @@ def admin_login():
 
 
                     <p class="description">
+
                         Sign in to manage
                         download requests.
+
                     </p>
 
 
                     <div class="error">
+
                         Falsches Passwort.
+
                     </div>
 
 
@@ -2458,13 +2616,16 @@ def admin_login():
             content="width=device-width, initial-scale=1.0"
         >
 
-        <title>GENGA Admin</title>
+        <title>
+            GENGA Admin
+        </title>
 
 
         <style>
 
             * {
-                box-sizing:border-box;
+                box-sizing:
+                    border-box;
             }
 
 
@@ -2480,7 +2641,7 @@ def admin_login():
 
                 justify-content:center;
 
-                background:#08080b;
+                background:#070707;
 
                 color:white;
 
@@ -2492,17 +2653,13 @@ def admin_login():
 
             .box {
 
-                width:
-                    350px;
+                width:350px;
 
-                padding:
-                    30px;
+                padding:30px;
 
-                border-radius:
-                    12px;
+                border-radius:11px;
 
-                background:
-                    #0e0e13;
+                background:#0d0d0f;
 
                 border:
                     1px solid
@@ -2510,26 +2667,21 @@ def admin_login():
 
                 box-shadow:
                     0 20px 70px
-                    rgba(0,0,0,.3);
+                    rgba(0,0,0,.35);
             }
 
 
             .brand {
 
-                color:
-                    #a78bfa;
+                color:#ff5a2b;
 
-                font-size:
-                    10px;
+                font-size:10px;
 
-                font-weight:
-                    800;
+                font-weight:900;
 
-                letter-spacing:
-                    2px;
+                letter-spacing:2px;
 
-                margin-bottom:
-                    10px;
+                margin-bottom:10px;
             }
 
 
@@ -2538,95 +2690,75 @@ def admin_login():
                 margin:
                     0 0 7px;
 
-                font-size:
-                    22px;
+                font-size:22px;
             }
 
 
             .description {
 
-                color:
-                    #6f6f78;
+                color:#69696f;
 
-                font-size:
-                    12px;
+                font-size:12px;
 
-                line-height:
-                    1.6;
+                line-height:1.6;
             }
 
 
             input {
 
-                width:
-                    100%;
+                width:100%;
 
-                height:
-                    42px;
+                height:42px;
 
-                padding:
-                    0 12px;
+                padding:0 12px;
 
                 margin:
                     18px 0 9px;
 
-                border-radius:
-                    7px;
+                border-radius:7px;
 
                 border:
                     1px solid
-                    rgba(255,255,255,.09);
+                    rgba(255,255,255,.08);
 
-                background:
-                    #08080b;
+                background:#070707;
 
-                color:
-                    white;
+                color:white;
 
-                outline:
-                    none;
+                outline:none;
             }
 
 
             input:focus {
 
                 border-color:
-                    rgba(139,92,246,.6);
+                    rgba(255,70,20,.55);
             }
 
 
             button {
 
-                width:
-                    100%;
+                width:100%;
 
-                height:
-                    41px;
+                height:41px;
 
-                border:
-                    0;
+                border:0;
 
-                border-radius:
-                    7px;
+                border-radius:7px;
 
-                background:
-                    #8b5cf6;
+                background:#ff461d;
 
-                color:
-                    white;
+                color:white;
 
-                font-weight:
-                    800;
+                font-weight:850;
 
-                cursor:
-                    pointer;
+                cursor:pointer;
             }
 
 
             button:hover {
 
-                background:
-                    #7c3aed;
+                background:#ff5728;
             }
 
         </style>
@@ -2651,8 +2783,10 @@ def admin_login():
 
 
             <p class="description">
+
                 Sign in to manage
                 download requests.
+
             </p>
 
 
@@ -2700,10 +2834,6 @@ def admin_panel():
     requests_html = ""
 
 
-    # --------------------------------------------------------
-    # KEINE REQUESTS
-    # --------------------------------------------------------
-
     if not PENDING_REQUESTS:
 
 
@@ -2717,10 +2847,6 @@ def admin_panel():
 
         """
 
-
-    # --------------------------------------------------------
-    # REQUESTS
-    # --------------------------------------------------------
 
     else:
 
@@ -2846,10 +2972,6 @@ def admin_panel():
             """
 
 
-    # --------------------------------------------------------
-    # ADMIN HTML
-    # --------------------------------------------------------
-
     return f"""
 
     <!DOCTYPE html>
@@ -2883,14 +3005,11 @@ def admin_panel():
 
                 min-height:100vh;
 
-                padding:
-                    40px 20px;
+                padding:40px 20px;
 
-                background:
-                    #08080b;
+                background:#070707;
 
-                color:
-                    white;
+                color:white;
 
                 font-family:
                     Arial,
@@ -2900,30 +3019,23 @@ def admin_panel():
 
             .container {{
 
-                max-width:
-                    800px;
+                max-width:800px;
 
-                margin:
-                    auto;
+                margin:auto;
             }}
 
 
             .brand {{
 
-                color:
-                    #a78bfa;
+                color:#ff5a2b;
 
-                font-size:
-                    10px;
+                font-size:10px;
 
-                font-weight:
-                    800;
+                font-weight:900;
 
-                letter-spacing:
-                    2px;
+                letter-spacing:2px;
 
-                margin-bottom:
-                    10px;
+                margin-bottom:10px;
             }}
 
 
@@ -2936,50 +3048,39 @@ def admin_panel():
 
             .subtitle {{
 
-                color:
-                    #777;
+                color:#69696f;
 
-                margin-bottom:
-                    30px;
+                margin-bottom:30px;
 
-                font-size:
-                    12px;
+                font-size:12px;
             }}
 
 
             .request {{
 
-                padding:
-                    22px;
+                padding:22px;
 
-                margin-bottom:
-                    12px;
+                margin-bottom:12px;
 
-                background:
-                    #0e0e13;
+                background:#0d0d0f;
 
                 border:
                     1px solid
                     rgba(255,255,255,.08);
 
-                border-radius:
-                    11px;
+                border-radius:10px;
             }}
 
 
             .request p {{
 
-                margin-top:
-                    18px;
+                margin-top:18px;
 
-                margin-bottom:
-                    6px;
+                margin-bottom:6px;
 
-                color:
-                    #aaa;
+                color:#999;
 
-                font-size:
-                    11px;
+                font-size:11px;
             }}
 
 
@@ -2987,141 +3088,109 @@ def admin_panel():
 
                 display:block;
 
-                padding:
-                    10px;
+                padding:10px;
 
-                border-radius:
-                    7px;
+                border-radius:7px;
 
-                background:
-                    #08080b;
+                background:#070707;
 
-                color:
-                    #c4b5fd;
+                color:#ff7048;
 
-                word-break:
-                    break-all;
+                word-break:break-all;
 
                 font-family:
                     Consolas,
                     monospace;
 
-                font-size:
-                    11px;
+                font-size:11px;
             }}
 
 
             .pending {{
 
-                color:
-                    #facc15;
+                color:#ff9f43;
 
-                font-size:
-                    11px;
+                font-size:11px;
 
-                font-weight:
-                    bold;
+                font-weight:bold;
             }}
 
 
             .approved {{
 
-                color:
-                    #4ade80;
+                color:#ff6841;
 
-                font-size:
-                    11px;
+                font-size:11px;
 
-                font-weight:
-                    bold;
+                font-weight:bold;
             }}
 
 
             button {{
 
-                margin-top:
-                    18px;
+                margin-top:18px;
 
-                padding:
-                    11px 16px;
+                padding:11px 16px;
 
-                border:
-                    0;
+                border:0;
 
-                border-radius:
-                    7px;
+                border-radius:7px;
 
-                color:
-                    white;
+                color:white;
 
-                font-weight:
-                    bold;
+                font-weight:bold;
 
-                cursor:
-                    pointer;
+                cursor:pointer;
             }}
 
 
             .approve {{
 
-                background:
-                    #8b5cf6;
+                background:#ff461d;
             }}
 
 
             .approve:hover {{
 
-                background:
-                    #7c3aed;
+                background:#ff5728;
             }}
 
 
             .empty {{
 
-                padding:
-                    25px;
+                padding:25px;
 
-                border-radius:
-                    11px;
+                border-radius:10px;
 
-                background:
-                    #0e0e13;
+                background:#0d0d0f;
 
                 border:
                     1px solid
                     rgba(255,255,255,.08);
 
-                color:
-                    #777;
+                color:#777;
 
-                font-size:
-                    12px;
+                font-size:12px;
             }}
 
 
             .logout {{
 
-                display:
-                    inline-block;
+                display:inline-block;
 
-                margin-bottom:
-                    30px;
+                margin-bottom:30px;
 
-                color:
-                    #777;
+                color:#777;
 
-                text-decoration:
-                    none;
+                text-decoration:none;
 
-                font-size:
-                    11px;
+                font-size:11px;
             }}
 
 
             .logout:hover {{
 
-                color:
-                    white;
+                color:white;
             }}
 
         </style>
@@ -3201,8 +3270,10 @@ def approve(request_id):
 
 
     print(
+
         f"Request {request_id} "
         f"wurde bestätigt."
+
     )
 
 
@@ -3242,10 +3313,6 @@ def download(request_id):
     )
 
 
-    # --------------------------------------------------------
-    # REQUEST EXISTIERT NICHT
-    # --------------------------------------------------------
-
     if not data:
 
         return (
@@ -3253,10 +3320,6 @@ def download(request_id):
             403
         )
 
-
-    # --------------------------------------------------------
-    # NICHT BESTÄTIGT
-    # --------------------------------------------------------
 
     if not data["approved"]:
 
@@ -3266,10 +3329,6 @@ def download(request_id):
             403
         )
 
-
-    # --------------------------------------------------------
-    # DATEIPFAD
-    # --------------------------------------------------------
 
     datei_pfad = os.path.join(
 
@@ -3282,10 +3341,6 @@ def download(request_id):
     )
 
 
-    # --------------------------------------------------------
-    # DATEI EXISTIERT NICHT
-    # --------------------------------------------------------
-
     if not os.path.isfile(
         datei_pfad
     ):
@@ -3295,10 +3350,6 @@ def download(request_id):
             404
         )
 
-
-    # --------------------------------------------------------
-    # DOWNLOAD
-    # --------------------------------------------------------
 
     return send_file(
 
