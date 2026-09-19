@@ -10,6 +10,7 @@ from flask import (
 )
 import os
 import uuid
+import secrets
 import requests
 import time
 from functools import wraps
@@ -60,6 +61,10 @@ DOWNLOAD_DATEI = "genga-client-1.21.11.txt"
 DISCORD_URL = "https://discord.gg/VEEV2gaeB"
 
 ADMIN_URL = "https://genga-client.onrender.com/admin"
+
+# Wie lange eine genehmigte Download-Berechtigung gültig bleibt.
+# Danach muss erneut ein Key angefordert werden.
+DOWNLOAD_TOKEN_LIFETIME = 15 * 60
 
 
 # ============================================================
@@ -643,10 +648,6 @@ h1 span {
 }
 
 
-/* ============================================================
-   PRIMARY
-   ============================================================ */
-
 .primary {
 
     background:
@@ -674,10 +675,6 @@ h1 span {
         rgba(255,70,29,0.22);
 }
 
-
-/* ============================================================
-   SECONDARY
-   ============================================================ */
 
 .secondary {
 
@@ -739,10 +736,6 @@ h1 span {
         rgba(0,0,0,0.25);
 }
 
-
-/* ============================================================
-   PANEL HEADER
-   ============================================================ */
 
 .panel-header {
 
@@ -891,10 +884,6 @@ h1 span {
         rgba(255,70,20,0.06);
 }
 
-
-/* ============================================================
-   KEY SUBMIT
-   ============================================================ */
 
 .key-submit {
 
@@ -1107,6 +1096,9 @@ h1 span {
     justify-content:
         center;
 
+    border:
+        0;
+
     border-radius:
         7px;
 
@@ -1124,6 +1116,9 @@ h1 span {
 
     font-weight:
         850;
+
+    cursor:
+        pointer;
 
     transition:
         0.18s ease;
@@ -1299,10 +1294,6 @@ h1 span {
         1.65;
 }
 
-
-/* ============================================================
-   DISCORD
-   ============================================================ */
 
 .discord-icon {
 
@@ -1484,25 +1475,17 @@ footer {
 <body>
 
 
-<!-- ==========================================================
-     HEADER
-     ========================================================== -->
-
 <header>
 
     <div class="header-inner">
 
-
         <div class="logo">
-
 
             <div class="logo-mark">
                 G
             </div>
 
-
             GEN<span>GA</span>
-
 
         </div>
 
@@ -1515,25 +1498,15 @@ footer {
 
         </div>
 
-
     </div>
 
 </header>
 
 
-<!-- ==========================================================
-     MAIN
-     ========================================================== -->
-
 <main>
-
 
 <section class="hero">
 
-
-    <!-- ======================================================
-         HERO
-         ====================================================== -->
 
     <div class="hero-content">
 
@@ -1564,7 +1537,6 @@ footer {
 
         <div class="actions">
 
-
             <a
                 class="button primary"
                 href="#key"
@@ -1580,16 +1552,10 @@ footer {
                 Explore Client
             </a>
 
-
         </div>
-
 
     </div>
 
-
-    <!-- ======================================================
-         MESSAGE
-         ====================================================== -->
 
     {% if message %}
 
@@ -1602,10 +1568,6 @@ footer {
     {% endif %}
 
 
-    <!-- ======================================================
-         DOWNLOAD / KEY
-         ====================================================== -->
-
     {% if download_ready %}
 
 
@@ -1614,14 +1576,11 @@ footer {
 
         <div class="download-title">
 
-
             <div class="download-check">
                 ✓
             </div>
 
-
             Key verified
-
 
         </div>
 
@@ -1634,14 +1593,21 @@ footer {
         </p>
 
 
-        <a
-            class="download-button"
-            href="/download/{{ request_id }}"
+        <form
+            method="POST"
+            action="/download/{{ request_id }}"
         >
 
-            Download GENGA Client →
+            <button
+                class="download-button"
+                type="submit"
+            >
 
-        </a>
+                Download GENGA Client →
+
+            </button>
+
+        </form>
 
 
     </div>
@@ -1658,7 +1624,6 @@ footer {
 
         <div class="panel-header">
 
-
             <div class="panel-icon">
                 #
             </div>
@@ -1667,7 +1632,6 @@ footer {
             <h2>
                 Access Key
             </h2>
-
 
         </div>
 
@@ -1715,10 +1679,6 @@ footer {
     {% endif %}
 
 
-    <!-- ======================================================
-         FEATURES
-         ====================================================== -->
-
     <div
         class="features-wrapper"
         id="features"
@@ -1726,9 +1686,7 @@ footer {
 
 
         <div class="section-label">
-
             Client
-
         </div>
 
 
@@ -1736,7 +1694,6 @@ footer {
 
 
             <div class="card">
-
 
                 <div class="card-icon">
                     ⚡
@@ -1755,12 +1712,10 @@ footer {
 
                 </p>
 
-
             </div>
 
 
             <div class="card">
-
 
                 <div class="card-icon">
                     ◈
@@ -1779,12 +1734,10 @@ footer {
 
                 </p>
 
-
             </div>
 
 
             <div class="card discord-card">
-
 
                 <div class="card-icon discord-icon">
                     💬
@@ -1815,12 +1768,10 @@ footer {
 
                 </a>
 
-
             </div>
 
 
         </div>
-
 
     </div>
 
@@ -1830,10 +1781,6 @@ footer {
 </main>
 
 
-<!-- ==========================================================
-     FOOTER
-     ========================================================== -->
-
 <footer>
 
     © 2026 GENGA Client
@@ -1841,30 +1788,208 @@ footer {
 </footer>
 
 
-<!-- ==========================================================
-     REQUEST STATUS
-     ========================================================== -->
-
 <script>
+
+/*
+ * ============================================================
+ * APPROVAL STATUS
+ * ============================================================
+ *
+ * Ablauf:
+ *
+ * 1. User gibt Key ein.
+ * 2. Server erstellt Request-ID.
+ * 3. Seite prüft alle 2 Sekunden den Status.
+ * 4. Admin bestätigt.
+ * 5. Status wird "approved".
+ * 6. Polling wird sofort beendet.
+ * 7. Seite navigiert GENAU EINMAL zur approved-Ansicht.
+ * 8. Auf dieser Ansicht läuft KEIN Polling mehr.
+ *
+ */
+
+
+/* Request-ID vom Server */
 
 const requestId =
     "{{ request_id or '' }}";
+
+
+/*
+ * Server sagt, ob der Download für DIESE SESSION
+ * tatsächlich freigegeben wurde.
+ */
 
 const downloadReady =
     {{ "true" if download_ready else "false" }};
 
 
 /*
- * WICHTIG:
+ * Diese Variable verhindert zusätzliche Navigationen.
+ */
+
+let approvalHandled = false;
+
+
+/*
+ * Prüft den Serverstatus.
+ */
+
+async function checkStatus() {
+
+
+    if (
+        !requestId ||
+        downloadReady ||
+        approvalHandled
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+
+        const response =
+            await fetch(
+                "/status/" +
+                encodeURIComponent(requestId),
+                {
+                    method:
+                        "GET",
+
+                    cache:
+                        "no-store",
+
+                    credentials:
+                        "same-origin"
+                }
+            );
+
+
+        if (!response.ok) {
+
+            /*
+             * Request existiert nicht mehr
+             * oder Server antwortet mit Fehler.
+             *
+             * Nicht automatisch reloaden.
+             */
+
+            scheduleNextCheck();
+
+            return;
+
+        }
+
+
+        const data =
+            await response.json();
+
+
+        /*
+         * Noch nicht bestätigt.
+         */
+
+        if (
+            data.status === "pending"
+        ) {
+
+            scheduleNextCheck();
+
+            return;
+
+        }
+
+
+        /*
+         * ADMIN HAT BESTÄTIGT
+         */
+
+        if (
+            data.status === "approved"
+        ) {
+
+
+            approvalHandled =
+                true;
+
+
+            /*
+             * Kein weiterer Check.
+             *
+             * Wir navigieren genau EINMAL
+             * auf die Download-Ansicht.
+             *
+             * approved=1 sorgt außerdem dafür,
+             * dass diese Seite nach der Navigation
+             * nicht wieder mit dem Polling beginnt.
+             */
+
+            window.location.replace(
+                "/?request=" +
+                encodeURIComponent(requestId) +
+                "&approved=1"
+            );
+
+
+            return;
+
+        }
+
+
+    } catch (error) {
+
+
+        console.log(
+            "Status check failed:",
+            error
+        );
+
+
+        scheduleNextCheck();
+
+    }
+
+}
+
+
+/*
+ * Wir verwenden absichtlich KEIN setInterval.
  *
- * Solange der Request noch nicht bestätigt wurde,
- * prüfen wir alle 2 Sekunden den Status.
+ * Dadurch läuft immer nur maximal ein Timer.
  *
- * Sobald "approved" zurückkommt, wird die Seite
- * GENAU EINMAL neu geladen.
- *
- * Nach dem Reload ist downloadReady = true.
- * Dadurch wird dieses Script nicht mehr ausgeführt.
+ * Sobald approved kommt, wird kein weiterer Timer
+ * erstellt.
+ */
+
+function scheduleNextCheck() {
+
+
+    if (
+        approvalHandled ||
+        downloadReady ||
+        !requestId
+    ) {
+
+        return;
+
+    }
+
+
+    setTimeout(
+        checkStatus,
+        2000
+    );
+
+}
+
+
+/*
+ * Nur starten, wenn wir tatsächlich
+ * auf eine ausstehende Anfrage warten.
  */
 
 if (
@@ -1872,106 +1997,7 @@ if (
     !downloadReady
 ) {
 
-    let alreadyReloaded = false;
-
-
-    const checkStatus = async () => {
-
-
-        if (alreadyReloaded) {
-
-            return;
-
-        }
-
-
-        try {
-
-
-            const response =
-                await fetch(
-                    "/status/" +
-                    encodeURIComponent(requestId),
-                    {
-                        cache:
-                            "no-store"
-                    }
-                );
-
-
-            if (!response.ok) {
-
-                return;
-
-            }
-
-
-            const data =
-                await response.json();
-
-
-            if (
-                data.status === "approved"
-            ) {
-
-
-                /*
-                 * Verhindert mehrfaches Reloaden.
-                 */
-
-                alreadyReloaded =
-                    true;
-
-
-                /*
-                 * Intervall stoppen.
-                 */
-
-                clearInterval(
-                    statusInterval
-                );
-
-
-                /*
-                 * Einmaliger Reload.
-                 */
-
-                window.location.reload();
-
-
-            }
-
-
-        } catch (error) {
-
-
-            console.log(
-                "Status check failed:",
-                error
-            );
-
-
-        }
-
-    };
-
-
-    /*
-     * Sofort einmal prüfen.
-     */
-
     checkStatus();
-
-
-    /*
-     * Danach alle 2 Sekunden.
-     */
-
-    const statusInterval =
-        setInterval(
-            checkStatus,
-            2000
-        );
 
 }
 
@@ -1995,6 +2021,10 @@ def index():
         "request"
     )
 
+    approved_view = (
+        request.args.get("approved") == "1"
+    )
+
     download_ready = False
 
     message = None
@@ -2009,17 +2039,83 @@ def index():
 
         if data:
 
-            if data["approved"]:
+
+            /*
+             * Der Download wird NICHT mehr nur anhand
+             * von data["approved"] angezeigt.
+             *
+             * Zusätzlich muss die aktuelle Browser-Session
+             * für genau diesen Request freigeschaltet sein.
+             */
+
+            session_request_id = session.get(
+                "download_request_id"
+            )
+
+            session_token = session.get(
+                "download_token"
+            )
+
+            token_created = session.get(
+                "download_token_created",
+                0
+            )
+
+
+            token_valid = (
+                session_token
+                and token_created
+                and (
+                    time.time()
+                    -
+                    token_created
+                ) <= DOWNLOAD_TOKEN_LIFETIME
+            )
+
+
+            session_authorized = (
+                session_request_id == request_id
+                and session_token == data.get(
+                    "download_token"
+                )
+                and token_valid
+                and not data.get(
+                    "downloaded",
+                    False
+                )
+            )
+
+
+            if (
+                data["approved"]
+                and session_authorized
+            ):
 
                 download_ready = True
 
-            else:
+
+            elif not data["approved"]:
 
                 message = (
                     "⏳ Dein Key wurde an das "
-                    "Genga-Team gesendet. "
+                    "GENGA-Team gesendet. "
                     "Warte auf die Bestätigung."
                 )
+
+
+            elif approved_view and not session_authorized:
+
+                message = (
+                    "❌ Diese Download-Berechtigung "
+                    "ist nicht mehr gültig."
+                )
+
+
+        else:
+
+            message = (
+                "❌ Diese Anfrage existiert nicht mehr."
+            )
 
 
     return render_template_string(
@@ -2098,6 +2194,26 @@ def request_download():
 
 
     # --------------------------------------------------------
+    # ALTE DOWNLOAD-AUTORISIERUNG ENTFERNEN
+    # --------------------------------------------------------
+
+    session.pop(
+        "download_request_id",
+        None
+    )
+
+    session.pop(
+        "download_token",
+        None
+    )
+
+    session.pop(
+        "download_token_created",
+        None
+    )
+
+
+    # --------------------------------------------------------
     # REQUEST ERSTELLEN
     # --------------------------------------------------------
 
@@ -2112,10 +2228,31 @@ def request_download():
         "approved":
             False,
 
+        "downloaded":
+            False,
+
+        "download_token":
+            None,
+
         "created":
-            time.time()
+            time.time(),
+
+        "approved_at":
+            None,
+
+        "downloaded_at":
+            None
 
     }
+
+
+    # --------------------------------------------------------
+    # REQUEST AN DIE SESSION BINDEN
+    # --------------------------------------------------------
+
+    session[
+        "active_request_id"
+    ] = request_id
 
 
     # --------------------------------------------------------
@@ -2130,14 +2267,14 @@ def request_download():
             payload = {
 
                 "content":
-                    "🔐 **Neue Genga Key-Anfrage**",
+                    "🔐 **Neue GENGA Key-Anfrage**",
 
                 "embeds": [
 
                     {
 
                         "title":
-                            "Genga Download Request",
+                            "GENGA Download Request",
 
                         "description":
                             "Ein Benutzer möchte "
@@ -2205,11 +2342,8 @@ def request_download():
 
 
             print(
-
                 "Discord Webhook Status:",
-
                 response.status_code
-
             )
 
 
@@ -2217,11 +2351,8 @@ def request_download():
 
 
             print(
-
                 "Discord Webhook Fehler:",
-
                 error
-
             )
 
 
@@ -2229,11 +2360,9 @@ def request_download():
 
 
         print(
-
             "WARNUNG: "
             "DISCORD_WEBHOOK_URL "
             "ist nicht gesetzt."
-
         )
 
 
@@ -2274,20 +2403,74 @@ def status(request_id):
         }), 404
 
 
-    if data["approved"]:
+    # --------------------------------------------------------
+    # NOCH NICHT BESTÄTIGT
+    # --------------------------------------------------------
+
+    if not data["approved"]:
 
         return jsonify({
 
             "status":
-                "approved"
+                "pending"
 
         })
+
+
+    # --------------------------------------------------------
+    # BEREITS HERUNTERGELADEN
+    # --------------------------------------------------------
+
+    if data.get(
+        "downloaded",
+        False
+    ):
+
+        return jsonify({
+
+            "status":
+                "used"
+
+        })
+
+
+    # --------------------------------------------------------
+    # DOWNLOAD-TOKEN ERSTELLEN
+    # --------------------------------------------------------
+
+    if not data.get(
+        "download_token"
+    ):
+
+        data["download_token"] = (
+            secrets.token_urlsafe(32)
+        )
+
+
+    # --------------------------------------------------------
+    # DIE AKTUELLE BROWSER-SESSION
+    # FÜR DEN DOWNLOAD FREISCHALTEN
+    # --------------------------------------------------------
+
+    session[
+        "download_request_id"
+    ] = request_id
+
+    session[
+        "download_token"
+    ] = data[
+        "download_token"
+    ]
+
+    session[
+        "download_token_created"
+    ] = time.time()
 
 
     return jsonify({
 
         "status":
-            "pending"
+            "approved"
 
     })
 
@@ -2878,13 +3061,29 @@ def admin_panel():
             if data["approved"]:
 
 
-                status_html = """
+                if data.get("downloaded"):
 
-                <div class="approved">
-                    ✓ APPROVED
-                </div>
+                    status_html = """
 
-                """
+                    <div class="approved">
+
+                        ✓ DOWNLOADED
+
+                    </div>
+
+                    """
+
+                else:
+
+                    status_html = """
+
+                    <div class="approved">
+
+                        ✓ APPROVED
+
+                    </div>
+
+                    """
 
 
                 button_html = ""
@@ -2896,7 +3095,9 @@ def admin_panel():
                 status_html = """
 
                 <div class="pending">
+
                     ⏳ PENDING
+
                 </div>
 
                 """
@@ -3266,7 +3467,37 @@ def approve(request_id):
         )
 
 
+    # --------------------------------------------------------
+    # BEREITS HERUNTERGELADEN
+    # --------------------------------------------------------
+
+    if data.get(
+        "downloaded",
+        False
+    ):
+
+        return (
+            "Dieser Request wurde bereits verwendet.",
+            409
+        )
+
+
+    # --------------------------------------------------------
+    # REQUEST BESTÄTIGEN
+    # --------------------------------------------------------
+
     data["approved"] = True
+
+    data["approved_at"] = time.time()
+
+
+    # --------------------------------------------------------
+    # NEUEN EINMALIGEN TOKEN ERSTELLEN
+    # --------------------------------------------------------
+
+    data["download_token"] = (
+        secrets.token_urlsafe(32)
+    )
 
 
     print(
@@ -3304,7 +3535,8 @@ def admin_logout():
 # ============================================================
 
 @app.route(
-    "/download/<request_id>"
+    "/download/<request_id>",
+    methods=["POST"]
 )
 def download(request_id):
 
@@ -3312,6 +3544,10 @@ def download(request_id):
         request_id
     )
 
+
+    # --------------------------------------------------------
+    # REQUEST EXISTIERT NICHT
+    # --------------------------------------------------------
 
     if not data:
 
@@ -3321,7 +3557,14 @@ def download(request_id):
         )
 
 
-    if not data["approved"]:
+    # --------------------------------------------------------
+    # KEY NICHT BESTÄTIGT
+    # --------------------------------------------------------
+
+    if not data.get(
+        "approved",
+        False
+    ):
 
         return (
             "Dein Key wurde noch "
@@ -3329,6 +3572,125 @@ def download(request_id):
             403
         )
 
+
+    # --------------------------------------------------------
+    # BEREITS VERWENDET
+    # --------------------------------------------------------
+
+    if data.get(
+        "downloaded",
+        False
+    ):
+
+        return (
+            "Dieser Download-Link wurde "
+            "bereits verwendet.",
+            403
+        )
+
+
+    # --------------------------------------------------------
+    # SESSION PRÜFEN
+    # --------------------------------------------------------
+
+    session_request_id = session.get(
+        "download_request_id"
+    )
+
+    session_token = session.get(
+        "download_token"
+    )
+
+    token_created = session.get(
+        "download_token_created",
+        0
+    )
+
+
+    # --------------------------------------------------------
+    # SESSION MUSS ZUM REQUEST GEHÖREN
+    # --------------------------------------------------------
+
+    if session_request_id != request_id:
+
+        return (
+            "Download nicht autorisiert.",
+            403
+        )
+
+
+    # --------------------------------------------------------
+    # TOKEN MUSS ÜBEREINSTIMMEN
+    # --------------------------------------------------------
+
+    if not session_token:
+
+        return (
+            "Download nicht autorisiert.",
+            403
+        )
+
+
+    if not secrets.compare_digest(
+        session_token,
+        data.get(
+            "download_token",
+            ""
+        )
+    ):
+
+        return (
+            "Download nicht autorisiert.",
+            403
+        )
+
+
+    # --------------------------------------------------------
+    # TOKEN-ALTER PRÜFEN
+    # --------------------------------------------------------
+
+    if not token_created:
+
+        return (
+            "Download-Berechtigung abgelaufen.",
+            403
+        )
+
+
+    token_age = (
+        time.time()
+        -
+        token_created
+    )
+
+
+    if token_age > DOWNLOAD_TOKEN_LIFETIME:
+
+        session.pop(
+            "download_request_id",
+            None
+        )
+
+        session.pop(
+            "download_token",
+            None
+        )
+
+        session.pop(
+            "download_token_created",
+            None
+        )
+
+        return (
+            "Download-Berechtigung abgelaufen. "
+            "Bitte erneut einen Key anfordern.",
+            403
+        )
+
+
+    # --------------------------------------------------------
+    # DATEIPFAD
+    # --------------------------------------------------------
 
     datei_pfad = os.path.join(
 
@@ -3341,6 +3703,10 @@ def download(request_id):
     )
 
 
+    # --------------------------------------------------------
+    # DATEI EXISTIERT NICHT
+    # --------------------------------------------------------
+
     if not os.path.isfile(
         datei_pfad
     ):
@@ -3350,6 +3716,47 @@ def download(request_id):
             404
         )
 
+
+    # --------------------------------------------------------
+    # DOWNLOAD ALS VERBRAUCHT MARKIEREN
+    # --------------------------------------------------------
+
+    data["downloaded"] = True
+
+    data["downloaded_at"] = time.time()
+
+
+    # --------------------------------------------------------
+    # SESSION-BERECHTIGUNG SOFORT ENTFERNEN
+    # --------------------------------------------------------
+
+    session.pop(
+        "download_request_id",
+        None
+    )
+
+    session.pop(
+        "download_token",
+        None
+    )
+
+    session.pop(
+        "download_token_created",
+        None
+    )
+
+
+    print(
+
+        f"Download für Request "
+        f"{request_id} gestartet."
+
+    )
+
+
+    # --------------------------------------------------------
+    # DATEI SENDEN
+    # --------------------------------------------------------
 
     return send_file(
 
