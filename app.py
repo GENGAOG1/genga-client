@@ -1755,4 +1755,618 @@ ADMIN_PANEL_HTML = r"""
         }
 
         .brand-text {
-            font-size: 
+            font-size: 14px;
+            font-weight: 900;
+
+            letter-spacing: 0.15em;
+        }
+
+        .logout {
+            color: #706a65;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .logout:hover {
+            color: #ff4b00;
+        }
+
+        .heading {
+            margin-bottom: 20px;
+        }
+
+        .eyebrow {
+            color: #ff4b00;
+
+            font-size: 10px;
+            font-weight: 900;
+
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+
+            margin-bottom: 9px;
+        }
+
+        h1 {
+            margin: 0;
+
+            font-size: 32px;
+            font-weight: 900;
+
+            letter-spacing: -0.035em;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+
+            gap: 1px;
+
+            background: #292522;
+
+            border: 1px solid #292522;
+
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            padding: 20px;
+
+            background: #11100e;
+        }
+
+        .stat-label {
+            color: #706a65;
+
+            font-size: 9px;
+            font-weight: 800;
+
+            letter-spacing: 0.13em;
+            text-transform: uppercase;
+
+            margin-bottom: 9px;
+        }
+
+        .stat-value {
+            color: #f2eee9;
+
+            font-size: 25px;
+            font-weight: 900;
+        }
+
+        .requests {
+            display: flex;
+            flex-direction: column;
+
+            gap: 8px;
+        }
+
+        .request {
+            padding: 19px;
+
+            background: #11100e;
+
+            border: 1px solid #292522;
+        }
+
+        .request-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+
+            gap: 15px;
+
+            margin-bottom: 15px;
+        }
+
+        .request-id {
+            color: #706a65;
+
+            font-size: 9px;
+            font-weight: 700;
+
+            letter-spacing: 0.04em;
+
+            word-break: break-all;
+        }
+
+        .status {
+            padding: 5px 8px;
+
+            border: 1px solid #37312c;
+
+            font-size: 9px;
+            font-weight: 900;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+
+            white-space: nowrap;
+        }
+
+        .status.pending {
+            color: #ff641a;
+            border-color: rgba(255, 75, 0, 0.25);
+        }
+
+        .status.approved {
+            color: #72d572;
+            border-color: rgba(114, 213, 114, 0.25);
+        }
+
+        .details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+
+            gap: 12px;
+
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            color: #706a65;
+
+            font-size: 9px;
+            font-weight: 800;
+
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+
+            margin-bottom: 5px;
+        }
+
+        .detail-value {
+            color: #d7d1cb;
+
+            font-size: 12px;
+
+            word-break: break-all;
+        }
+
+        .approve {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+
+            height: 39px;
+
+            padding: 0 16px;
+
+            border: 0;
+
+            background: #ff4b00;
+            color: #0b0908;
+
+            font-size: 10px;
+            font-weight: 900;
+
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+
+            cursor: pointer;
+        }
+
+        .approve:hover {
+            background: #ff641a;
+        }
+
+        .empty {
+            padding: 45px 20px;
+
+            text-align: center;
+
+            background: #11100e;
+
+            border: 1px solid #292522;
+
+            color: #706a65;
+
+            font-size: 12px;
+        }
+
+        @media (max-width: 650px) {
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+
+            .details {
+                grid-template-columns: 1fr;
+            }
+
+            .request-top {
+                flex-direction: column;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="page">
+
+    <header class="topbar">
+
+        <div class="brand">
+
+            <div class="mark">
+                G
+            </div>
+
+            <div class="brand-text">
+                GENGA ADMIN
+            </div>
+
+        </div>
+
+        <a
+            class="logout"
+            href="/admin/logout"
+        >
+            Logout
+        </a>
+
+    </header>
+
+
+    <div class="heading">
+
+        <div class="eyebrow">
+            Access management
+        </div>
+
+        <h1>
+            Download Requests
+        </h1>
+
+    </div>
+
+
+    <section class="stats">
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Total
+            </div>
+
+            <div class="stat-value">
+                {{ total }}
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Pending
+            </div>
+
+            <div class="stat-value">
+                {{ pending }}
+            </div>
+
+        </div>
+
+
+        <div class="stat">
+
+            <div class="stat-label">
+                Approved
+            </div>
+
+            <div class="stat-value">
+                {{ approved }}
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section class="requests">
+
+        {% if requests %}
+
+            {% for request_id, data in requests %}
+
+                <article class="request">
+
+                    <div class="request-top">
+
+                        <div class="request-id">
+                            {{ request_id }}
+                        </div>
+
+                        {% if data.approved %}
+
+                            <div class="status approved">
+                                Approved
+                            </div>
+
+                        {% else %}
+
+                            <div class="status pending">
+                                Pending
+                            </div>
+
+                        {% endif %}
+
+                    </div>
+
+
+                    <div class="details">
+
+                        <div>
+
+                            <div class="detail-label">
+                                Access Key
+                            </div>
+
+                            <div class="detail-value">
+                                {{ data.key }}
+                            </div>
+
+                        </div>
+
+
+                        <div>
+
+                            <div class="detail-label">
+                                Created
+                            </div>
+
+                            <div class="detail-value">
+                                {{ data.created_text }}
+                            </div>
+
+                        </div>
+
+                    </div>
+
+
+                    {% if not data.approved %}
+
+                        <form
+                            method="POST"
+                            action="/admin/approve/{{ request_id }}"
+                        >
+
+                            <button
+                                class="approve"
+                                type="submit"
+                            >
+                                Approve Request
+                            </button>
+
+                        </form>
+
+                    {% endif %}
+
+                </article>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="empty">
+                No download requests yet.
+            </div>
+
+        {% endif %}
+
+    </section>
+
+</div>
+
+</body>
+
+</html>
+"""
+
+
+@app.route("/admin/panel")
+@admin_required
+def admin_panel():
+
+    cleanup_old_requests()
+
+    request_items = []
+
+    for request_id, data in PENDING_REQUESTS.items():
+
+        request_copy = dict(data)
+
+        request_copy["created_text"] = time.strftime(
+            "%Y-%m-%d %H:%M:%S",
+            time.localtime(
+                data.get("created", time.time())
+            )
+        )
+
+        request_items.append(
+            (
+                request_id,
+                request_copy
+            )
+        )
+
+
+    request_items.sort(
+        key=lambda item: item[1].get(
+            "created",
+            0
+        ),
+        reverse=True
+    )
+
+
+    total = len(request_items)
+
+    pending = sum(
+        1
+        for _, data in request_items
+        if not data.get("approved")
+    )
+
+    approved = sum(
+        1
+        for _, data in request_items
+        if data.get("approved")
+    )
+
+
+    return render_template_string(
+
+        ADMIN_PANEL_HTML,
+
+        requests=request_items,
+
+        total=total,
+
+        pending=pending,
+
+        approved=approved
+    )
+
+
+# ============================================================
+# APPROVE REQUEST
+# ============================================================
+
+@app.route(
+    "/admin/approve/<request_id>",
+    methods=["POST"]
+)
+@admin_required
+def approve_request(request_id):
+
+    request_data = PENDING_REQUESTS.get(request_id)
+
+
+    if not request_data:
+
+        return redirect(
+            url_for("admin_panel")
+        )
+
+
+    request_data["approved"] = True
+
+    request_data["approved_at"] = time.time()
+
+
+    print(
+        f"GENGA request approved: {request_id}"
+    )
+
+
+    return redirect(
+        url_for("admin_panel")
+    )
+
+
+# ============================================================
+# ADMIN LOGOUT
+# ============================================================
+
+@app.route("/admin/logout")
+def admin_logout():
+
+    session.pop(
+        "admin_logged_in",
+        None
+    )
+
+    return redirect(
+        url_for("admin")
+    )
+
+
+# ============================================================
+# DOWNLOAD
+# ============================================================
+
+@app.route("/download/<request_id>")
+def download(request_id):
+
+    request_data = PENDING_REQUESTS.get(
+        request_id
+    )
+
+
+    if not request_data:
+
+        return (
+            "Download request not found.",
+            404
+        )
+
+
+    if not request_data.get("approved"):
+
+        return (
+            "This download request has not been approved.",
+            403
+        )
+
+
+    if not os.path.isfile(DOWNLOAD_PATH):
+
+        print(
+            "Download file not found:",
+            DOWNLOAD_PATH
+        )
+
+        return (
+            "Download file is currently unavailable.",
+            404
+        )
+
+
+    return send_file(
+        DOWNLOAD_PATH,
+        as_attachment=True,
+        download_name=DOWNLOAD_DATEI
+    )
+
+
+# ============================================================
+# HEALTH CHECK
+# ============================================================
+
+@app.route("/health")
+def health():
+
+    return jsonify({
+        "status": "ok",
+        "service": "GENGA Client"
+    })
+
+
+# ============================================================
+# START
+# ============================================================
+
+if __name__ == "__main__":
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
