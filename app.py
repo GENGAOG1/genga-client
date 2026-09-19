@@ -39,7 +39,7 @@ VALID_KEYS = [
 
 DOWNLOAD_DATEI = "genga-client-1.21.11.txt"
 
-DISCORD_URL = "https://discord.gg/VEEV2gaeB"
+DISCORD_URL = "https://discord.gg/sw7zNs9T58"
 
 ADMIN_URL = "https://genga-client.onrender.com/admin"
 
