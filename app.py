@@ -56,14 +56,13 @@ VALID_KEYS = [
 # GENGA DOWNLOAD
 # ------------------------------------------------------------
 
-DOWNLOAD_DATEI = "genga-client-1.21.11.txt"
+DOWNLOAD_DATEI = "GENGA-Client.jar"
+
+SOURCE_DATEI = "WaterClientDevVersionByDexter_PRIVACY_CLEAN.jar"
 
 
 # ------------------------------------------------------------
 # DISCORD
-#
-# Der Invite bleibt ABSICHTLICH direkt im Code.
-# Keine Environment Variable dafür.
 # ------------------------------------------------------------
 
 DISCORD_URL = "https://discord.gg/sw7zNs9T58"
@@ -158,7 +157,7 @@ def send_discord_notification(
                     "Eine neue Download-Anfrage wurde erstellt.",
 
                 "color":
-                    16728064,
+                    39423,
 
                 "fields": [
 
@@ -272,9 +271,20 @@ HTML = r"""
 
             min-height: 100vh;
 
-            background: #090909;
+            background:
+                radial-gradient(
+                    circle at 50% -10%,
+                    rgba(0, 174, 255, 0.18),
+                    transparent 38%
+                ),
+                radial-gradient(
+                    circle at 100% 100%,
+                    rgba(0, 91, 255, 0.10),
+                    transparent 35%
+                ),
+                #050911;
 
-            color: #e5e5e5;
+            color: #e9f7ff;
 
             font-family:
                 Arial,
@@ -304,11 +314,11 @@ HTML = r"""
         .page {
 
             width: min(
-                760px,
+                780px,
                 calc(100% - 30px)
             );
 
-            margin: 70px auto;
+            margin: 55px auto;
 
         }
 
@@ -319,37 +329,91 @@ HTML = r"""
 
         header {
 
-            padding-bottom: 25px;
+            position: relative;
 
-            border-bottom: 1px solid #262626;
+            padding: 28px 28px 25px;
 
-            margin-bottom: 35px;
+            border: 1px solid rgba(70, 170, 255, 0.18);
+
+            border-radius: 18px;
+
+            margin-bottom: 28px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(12, 25, 43, 0.94),
+                    rgba(5, 11, 21, 0.94)
+                );
+
+            box-shadow:
+                0 0 40px rgba(0, 128, 255, 0.07),
+                inset 0 1px rgba(255, 255, 255, 0.03);
+
+            overflow: hidden;
+        }
+
+
+        header::before {
+
+            content: "";
+
+            position: absolute;
+
+            left: 0;
+
+            top: 0;
+
+            width: 100%;
+
+            height: 2px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #29c8ff,
+                    #3b7dff,
+                    transparent
+                );
+
+            opacity: 0.9;
         }
 
 
         .brand {
 
-            font-size: 25px;
+            font-size: 27px;
 
-            font-weight: 700;
+            font-weight: 800;
 
-            letter-spacing: -0.03em;
+            letter-spacing: 0.02em;
+
+            color: #ffffff;
+
+            text-shadow:
+                0 0 22px rgba(39, 193, 255, 0.18);
         }
 
 
         .brand span {
 
-            color: #f04b1c;
+            color: #27c9ff;
+
+            text-shadow:
+                0 0 18px rgba(39, 201, 255, 0.35);
         }
 
 
         .version {
 
-            margin-top: 6px;
+            margin-top: 7px;
 
-            color: #666;
+            color: #6f91aa;
 
             font-size: 12px;
+
+            letter-spacing: 0.03em;
         }
 
 
@@ -359,31 +423,59 @@ HTML = r"""
 
         section {
 
-            margin-bottom: 42px;
+            margin-bottom: 22px;
+
+            padding: 24px;
+
+            border: 1px solid rgba(70, 170, 255, 0.13);
+
+            border-radius: 18px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(10, 21, 36, 0.88),
+                    rgba(5, 11, 20, 0.90)
+                );
+
+            box-shadow:
+                0 15px 45px rgba(0, 0, 0, 0.25);
+
+            backdrop-filter: blur(12px);
         }
 
 
         h2 {
 
-            margin: 0 0 17px;
+            margin: 0 0 14px;
 
-            font-size: 13px;
+            font-size: 11px;
 
-            font-weight: 700;
+            font-weight: 800;
 
-            letter-spacing: 0.08em;
+            letter-spacing: 0.14em;
 
             text-transform: uppercase;
 
-            color: #f04b1c;
+            color: #36c9ff;
         }
 
 
         .line {
 
-            border-top: 1px solid #262626;
+            height: 1px;
 
-            margin-bottom: 18px;
+            border: 0;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(42, 196, 255, 0.30),
+                    rgba(42, 196, 255, 0.04),
+                    transparent
+                );
+
+            margin-bottom: 20px;
         }
 
 
@@ -393,17 +485,19 @@ HTML = r"""
 
         .download-name {
 
-            font-size: 20px;
+            font-size: 21px;
 
-            font-weight: 600;
+            font-weight: 700;
+
+            color: #f2fbff;
         }
 
 
         .download-description {
 
-            margin-top: 7px;
+            margin-top: 8px;
 
-            color: #777;
+            color: #70869a;
 
             line-height: 1.6;
         }
@@ -413,13 +507,16 @@ HTML = r"""
 
             margin-top: 18px;
 
-            padding: 12px;
+            padding: 13px 14px;
 
-            border: 1px solid #252525;
+            border: 1px solid rgba(61, 169, 255, 0.18);
 
-            background: #0d0d0d;
+            border-radius: 10px;
 
-            color: #aaa;
+            background:
+                rgba(2, 9, 18, 0.85);
+
+            color: #7fa9c2;
 
             font-family:
                 "Courier New",
@@ -428,6 +525,9 @@ HTML = r"""
             font-size: 12px;
 
             overflow-x: auto;
+
+            box-shadow:
+                inset 0 0 18px rgba(0, 123, 255, 0.035);
         }
 
 
@@ -439,35 +539,53 @@ HTML = r"""
 
             justify-content: center;
 
-            min-width: 150px;
+            min-width: 155px;
 
-            height: 42px;
+            height: 44px;
 
-            margin-top: 12px;
+            margin-top: 14px;
 
-            padding: 0 18px;
+            padding: 0 20px;
 
-            background: #f04b1c;
+            border: 1px solid #24c7ff;
 
-            border: 1px solid #f04b1c;
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #19bfff,
+                    #257cff
+                );
 
             color: #fff;
 
             font-size: 11px;
 
-            font-weight: 700;
+            font-weight: 800;
 
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
 
             text-transform: uppercase;
+
+            box-shadow:
+                0 0 22px rgba(25, 176, 255, 0.18);
+
+            transition:
+                transform 0.15s ease,
+                box-shadow 0.15s ease,
+                filter 0.15s ease;
         }
 
 
         .download-button:hover {
 
-            background: #ff5b27;
+            transform: translateY(-2px);
 
-            border-color: #ff5b27;
+            filter: brightness(1.08);
+
+            box-shadow:
+                0 0 30px rgba(25, 176, 255, 0.32);
         }
 
 
@@ -475,7 +593,15 @@ HTML = r"""
 
             margin-top: 16px;
 
-            color: #666;
+            padding: 11px 13px;
+
+            border: 1px solid rgba(66, 153, 214, 0.12);
+
+            border-radius: 9px;
+
+            background: rgba(3, 12, 22, 0.65);
+
+            color: #668096;
 
             font-size: 12px;
 
@@ -489,7 +615,7 @@ HTML = r"""
 
         .access-text {
 
-            color: #777;
+            color: #71879a;
 
             line-height: 1.6;
 
@@ -501,7 +627,7 @@ HTML = r"""
 
             display: flex;
 
-            gap: 8px;
+            gap: 9px;
 
             max-width: 600px;
         }
@@ -513,67 +639,96 @@ HTML = r"""
 
             min-width: 0;
 
-            height: 42px;
+            height: 44px;
 
-            padding: 0 12px;
+            padding: 0 13px;
 
-            background: #0b0b0b;
+            background:
+                rgba(2, 9, 18, 0.85);
 
-            border: 1px solid #303030;
+            border: 1px solid #203b52;
+
+            border-radius: 10px;
 
             outline: none;
 
-            color: #eee;
+            color: #e9f8ff;
 
             font-family:
                 "Courier New",
                 monospace;
 
             font-size: 12px;
+
+            transition:
+                border-color 0.15s ease,
+                box-shadow 0.15s ease;
         }
 
 
         .key-input::placeholder {
 
-            color: #4d4d4d;
+            color: #40576a;
         }
 
 
         .key-input:focus {
 
-            border-color: #555;
+            border-color: #27bfff;
+
+            box-shadow:
+                0 0 0 3px rgba(39, 191, 255, 0.08),
+                0 0 20px rgba(39, 191, 255, 0.05);
         }
 
 
         .request-button {
 
-            height: 42px;
+            height: 44px;
 
-            padding: 0 18px;
+            padding: 0 20px;
 
-            background: #f04b1c;
+            background:
+                linear-gradient(
+                    135deg,
+                    #16bfff,
+                    #286eff
+                );
 
-            border: 1px solid #f04b1c;
+            border: 1px solid #27c6ff;
+
+            border-radius: 10px;
 
             color: #fff;
 
             font-size: 10px;
 
-            font-weight: 700;
+            font-weight: 800;
 
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
 
             text-transform: uppercase;
 
             cursor: pointer;
+
+            box-shadow:
+                0 0 20px rgba(31, 164, 255, 0.13);
+
+            transition:
+                transform 0.15s ease,
+                filter 0.15s ease,
+                box-shadow 0.15s ease;
         }
 
 
         .request-button:hover {
 
-            background: #ff5b27;
+            transform: translateY(-1px);
 
-            border-color: #ff5b27;
+            filter: brightness(1.08);
+
+            box-shadow:
+                0 0 25px rgba(31, 164, 255, 0.25);
         }
 
 
@@ -583,11 +738,16 @@ HTML = r"""
 
         .discord {
 
-            margin-top: 20px;
+            margin-top: 22px;
 
-            padding-top: 18px;
+            padding: 14px 15px;
 
-            border-top: 1px solid #222;
+            border: 1px solid rgba(82, 147, 255, 0.12);
+
+            border-radius: 10px;
+
+            background:
+                rgba(4, 12, 24, 0.55);
 
             font-size: 12px;
         }
@@ -595,7 +755,7 @@ HTML = r"""
 
         .discord-label {
 
-            color: #666;
+            color: #587084;
 
             margin-right: 6px;
         }
@@ -603,17 +763,22 @@ HTML = r"""
 
         .discord-link {
 
-            color: #aaa;
+            color: #78b9db;
 
             font-family:
                 "Courier New",
                 monospace;
+
+            transition: color 0.15s ease;
         }
 
 
         .discord-link:hover {
 
-            color: #f04b1c;
+            color: #2bcaff;
+
+            text-shadow:
+                0 0 10px rgba(43, 202, 255, 0.3);
         }
 
 
@@ -623,19 +788,27 @@ HTML = r"""
 
         .message {
 
-            margin-bottom: 30px;
+            margin-bottom: 22px;
 
-            padding: 12px;
+            padding: 14px 16px;
 
-            border-left: 2px solid #f04b1c;
+            border: 1px solid rgba(41, 191, 255, 0.16);
 
-            background: #101010;
+            border-left: 3px solid #27c7ff;
 
-            color: #999;
+            border-radius: 10px;
+
+            background:
+                rgba(7, 21, 35, 0.85);
+
+            color: #91afc1;
 
             font-size: 12px;
 
             line-height: 1.5;
+
+            box-shadow:
+                0 0 20px rgba(0, 153, 255, 0.04);
         }
 
 
@@ -645,7 +818,11 @@ HTML = r"""
 
         .info {
 
-            border-top: 1px solid #262626;
+            border-top: 1px solid rgba(64, 137, 189, 0.14);
+
+            border-radius: 8px;
+
+            overflow: hidden;
         }
 
 
@@ -657,27 +834,36 @@ HTML = r"""
 
             gap: 20px;
 
-            padding: 13px 0;
+            padding: 14px 13px;
 
-            border-bottom: 1px solid #202020;
+            border-bottom: 1px solid rgba(48, 102, 139, 0.10);
+
+            background:
+                rgba(3, 10, 19, 0.38);
+        }
+
+
+        .info-row:last-child {
+
+            border-bottom: 0;
         }
 
 
         .info-name {
 
-            color: #666;
+            color: #547084;
 
-            font-size: 11px;
+            font-size: 10px;
 
             text-transform: uppercase;
 
-            letter-spacing: 0.05em;
+            letter-spacing: 0.08em;
         }
 
 
         .info-value {
 
-            color: #aaa;
+            color: #9cc2d7;
 
             text-align: right;
 
@@ -691,13 +877,15 @@ HTML = r"""
 
         footer {
 
-            padding-top: 20px;
+            padding: 20px 5px;
 
-            border-top: 1px solid #262626;
-
-            color: #4d4d4d;
+            color: #3e5668;
 
             font-size: 11px;
+
+            text-align: center;
+
+            letter-spacing: 0.02em;
         }
 
 
@@ -709,21 +897,34 @@ HTML = r"""
 
             .page {
 
-                width: calc(100% - 24px);
+                width: calc(100% - 18px);
 
-                margin: 35px auto;
+                margin: 25px auto;
             }
 
 
             header {
 
-                margin-bottom: 28px;
+                padding: 23px 20px;
+
+                margin-bottom: 16px;
+
+                border-radius: 15px;
             }
 
 
             .brand {
 
                 font-size: 22px;
+            }
+
+
+            section {
+
+                padding: 19px;
+
+                border-radius: 15px;
+
             }
 
 
@@ -734,6 +935,12 @@ HTML = r"""
 
 
             .request-button {
+
+                width: 100%;
+            }
+
+
+            .download-button {
 
                 width: 100%;
             }
@@ -931,11 +1138,6 @@ HTML = r"""
         {% endif %}
 
 
-        <!--
-            DISCORD INVITE ABSICHTLICH DIREKT IM HTML.
-            Keine Environment Variable.
-        -->
-
         <div class="discord">
 
             <span class="discord-label">
@@ -1124,13 +1326,6 @@ HTML = r"""
                 approvalHandled = true;
 
 
-                /*
-                 * Genau EIN Redirect.
-                 *
-                 * Danach wird approvalView = true,
-                 * wodurch kein weiterer Poll gestartet wird.
-                 */
-
                 window.location.replace(
 
                     "/?request=" +
@@ -1180,11 +1375,6 @@ HTML = r"""
 
     }
 
-
-    /*
-     * Nur bei einer noch nicht freigegebenen Anfrage
-     * wird der Status geprüft.
-     */
 
     if (
         requestId &&
@@ -1483,9 +1673,15 @@ ADMIN_LOGIN_HTML = r"""
 
             justify-content: center;
 
-            background: #090909;
+            background:
+                radial-gradient(
+                    circle at top,
+                    rgba(0, 174, 255, 0.14),
+                    transparent 40%
+                ),
+                #050911;
 
-            color: #eee;
+            color: #e9f7ff;
 
             font-family:
                 Arial,
@@ -1497,11 +1693,54 @@ ADMIN_LOGIN_HTML = r"""
         .login {
 
             width: min(
-                380px,
+                400px,
                 calc(100% - 24px)
             );
 
-            border-top: 2px solid #f04b1c;
+            padding: 28px;
+
+            border: 1px solid rgba(70, 170, 255, 0.18);
+
+            border-radius: 18px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(12, 25, 43, 0.96),
+                    rgba(5, 11, 21, 0.96)
+                );
+
+            box-shadow:
+                0 20px 70px rgba(0, 0, 0, 0.4),
+                0 0 35px rgba(0, 128, 255, 0.06);
+
+            position: relative;
+        }
+
+
+        .login::before {
+
+            content: "";
+
+            position: absolute;
+
+            left: 0;
+
+            top: 0;
+
+            width: 100%;
+
+            height: 2px;
+
+            border-radius: 18px 18px 0 0;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #29c8ff,
+                    transparent
+                );
         }
 
 
@@ -1510,6 +1749,8 @@ ADMIN_LOGIN_HTML = r"""
             margin: 0;
 
             font-size: 24px;
+
+            color: #fff;
         }
 
 
@@ -1517,7 +1758,7 @@ ADMIN_LOGIN_HTML = r"""
 
             margin: 7px 0 20px;
 
-            color: #666;
+            color: #668196;
 
             font-size: 12px;
         }
@@ -1527,23 +1768,30 @@ ADMIN_LOGIN_HTML = r"""
 
             width: 100%;
 
-            height: 42px;
+            height: 44px;
 
-            padding: 0 12px;
+            padding: 0 13px;
 
-            background: #0b0b0b;
+            background: rgba(2, 9, 18, 0.85);
 
-            border: 1px solid #303030;
+            border: 1px solid #203b52;
+
+            border-radius: 10px;
 
             outline: none;
 
-            color: #eee;
+            color: #e9f8ff;
+
+            transition: 0.15s;
         }
 
 
         input:focus {
 
-            border-color: #555;
+            border-color: #27bfff;
+
+            box-shadow:
+                0 0 0 3px rgba(39, 191, 255, 0.08);
         }
 
 
@@ -1551,13 +1799,20 @@ ADMIN_LOGIN_HTML = r"""
 
             width: 100%;
 
-            height: 42px;
+            height: 44px;
 
-            margin-top: 8px;
+            margin-top: 9px;
 
-            border: 1px solid #f04b1c;
+            border: 1px solid #27c6ff;
 
-            background: #f04b1c;
+            border-radius: 10px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #16bfff,
+                    #286eff
+                );
 
             color: #fff;
 
@@ -1565,17 +1820,23 @@ ADMIN_LOGIN_HTML = r"""
 
             font-weight: bold;
 
-            letter-spacing: 0.06em;
+            letter-spacing: 0.08em;
 
             text-transform: uppercase;
 
             cursor: pointer;
+
+            box-shadow:
+                0 0 20px rgba(31, 164, 255, 0.13);
         }
 
 
         button:hover {
 
-            background: #ff5b27;
+            filter: brightness(1.08);
+
+            box-shadow:
+                0 0 28px rgba(31, 164, 255, 0.25);
         }
 
 
@@ -1583,7 +1844,15 @@ ADMIN_LOGIN_HTML = r"""
 
             margin-top: 12px;
 
-            color: #ff6868;
+            padding: 10px;
+
+            border: 1px solid rgba(255, 80, 100, 0.18);
+
+            border-radius: 8px;
+
+            background: rgba(80, 10, 20, 0.2);
+
+            color: #ff7d8b;
 
             font-size: 11px;
         }
@@ -1875,9 +2144,15 @@ def admin_panel():
 
             min-height: 100vh;
 
-            background: #090909;
+            background:
+                radial-gradient(
+                    circle at top,
+                    rgba(0, 174, 255, 0.12),
+                    transparent 40%
+                ),
+                #050911;
 
-            color: #eee;
+            color: #e9f7ff;
 
             font-family:
                 Arial,
@@ -1905,9 +2180,47 @@ def admin_panel():
 
             justify-content: space-between;
 
-            padding-bottom: 18px;
+            padding: 22px;
 
-            border-bottom: 1px solid #262626;
+            border: 1px solid rgba(70, 170, 255, 0.16);
+
+            border-radius: 16px;
+
+            background:
+                linear-gradient(
+                    145deg,
+                    rgba(12, 25, 43, 0.94),
+                    rgba(5, 11, 21, 0.94)
+                );
+
+            box-shadow:
+                0 0 35px rgba(0, 128, 255, 0.05);
+
+            position: relative;
+        }}
+
+
+        .top::before {{
+
+            content: "";
+
+            position: absolute;
+
+            left: 0;
+
+            top: 0;
+
+            width: 100%;
+
+            height: 2px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    transparent,
+                    #29c8ff,
+                    transparent
+                );
         }}
 
 
@@ -1916,6 +2229,8 @@ def admin_panel():
             margin: 0;
 
             font-size: 23px;
+
+            color: #fff;
         }}
 
 
@@ -1923,7 +2238,7 @@ def admin_panel():
 
             margin-top: 5px;
 
-            color: #666;
+            color: #668196;
 
             font-size: 11px;
         }}
@@ -1931,19 +2246,21 @@ def admin_panel():
 
         .logout {{
 
-            color: #666;
+            color: #668196;
 
             font-size: 10px;
 
             text-transform: uppercase;
 
             letter-spacing: 0.05em;
+
+            transition: 0.15s;
         }}
 
 
         .logout:hover {{
 
-            color: #f04b1c;
+            color: #2bcaff;
         }}
 
 
@@ -1952,6 +2269,14 @@ def admin_panel():
             margin-top: 20px;
 
             overflow-x: auto;
+
+            padding: 4px;
+
+            border: 1px solid rgba(70, 170, 255, 0.12);
+
+            border-radius: 15px;
+
+            background: rgba(6, 15, 27, 0.88);
         }}
 
 
@@ -1967,13 +2292,13 @@ def admin_panel():
 
         th {{
 
-            padding: 11px 10px;
+            padding: 13px 10px;
 
             text-align: left;
 
-            border-bottom: 1px solid #262626;
+            border-bottom: 1px solid #1d3549;
 
-            color: #555;
+            color: #4f7187;
 
             font-size: 9px;
 
@@ -1987,15 +2312,21 @@ def admin_panel():
 
             padding: 13px 10px;
 
-            border-bottom: 1px solid #1d1d1d;
+            border-bottom: 1px solid rgba(48, 102, 139, 0.10);
 
             font-size: 11px;
         }}
 
 
+        tr:last-child td {{
+
+            border-bottom: 0;
+        }}
+
+
         code {{
 
-            color: #aaa;
+            color: #8db7cc;
 
             font-family:
                 "Courier New",
@@ -2007,21 +2338,31 @@ def admin_panel():
 
         .approved {{
 
-            color: #f04b1c;
+            color: #29caff;
 
             font-size: 10px;
 
             font-weight: bold;
+
+            text-shadow:
+                0 0 10px rgba(41, 202, 255, 0.25);
         }}
 
 
         .approve {{
 
-            padding: 7px 11px;
+            padding: 7px 12px;
 
-            border: 1px solid #f04b1c;
+            border: 1px solid #25c7ff;
 
-            background: #f04b1c;
+            border-radius: 7px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    #16bfff,
+                    #286eff
+                );
 
             color: #fff;
 
@@ -2035,7 +2376,7 @@ def admin_panel():
 
         .approve:hover {{
 
-            background: #ff5b27;
+            filter: brightness(1.1);
         }}
 
 
@@ -2045,7 +2386,7 @@ def admin_panel():
 
             text-align: center;
 
-            color: #555;
+            color: #4d687a;
         }}
 
     </style>
@@ -2247,7 +2588,7 @@ def download(request_id):
             os.path.abspath(__file__)
         ),
 
-        DOWNLOAD_DATEI
+        SOURCE_DATEI
 
     )
 
